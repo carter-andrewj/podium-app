@@ -1,0 +1,43 @@
+{
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo r -c",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "eject": "expo eject",
+    "master-reset": "watchman watch-del-all && rm -rf /tmp/metro-bundler/cache-* && rm -rf /tmp/haste-map-react-native-packager-* && npm cache verify"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.19",
+    "@fortawesome/free-brands-svg-icons": "^5.9.0",
+    "@fortawesome/free-solid-svg-icons": "^5.9.0",
+    "expo": "^33.0.0",
+    "expo-font": "~5.0.1",
+    "expo-fontawesome": "^0.1.2",
+    "expo-secure-store": "~5.0.1",
+    "immutable": "^4.0.0-rc.12",
+    "mobx": "^5.10.1",
+    "mobx-react": "^5.4.3",
+    "react": "16.8.3",
+    "react-dom": "^16.8.6",
+    "react-native": "https://github.com/expo/react-native/archive/sdk-33.0.0.tar.gz",
+    "react-native-svg": "~9.4.0",
+    "react-native-web": "^0.11.4",
+    "react-navigation": "^3.11.0",
+    "sharp": "^0.22.1",
+    "socket.io-client": "^2.2.0",
+    "tslib": "^1.10.0",
+    "uuid": "^3.3.2"
+  },
+  "rnpm": {
+    "assets": [
+      "./assets/fonts/"
+    ]
+  },
+  "devDependencies": {
+    "babel-plugin-rewrite-require": "^1.14.5",
+    "babel-preset-expo": "^5.1.1"
+  },
+  "private": true
+}
