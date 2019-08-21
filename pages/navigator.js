@@ -2,7 +2,7 @@ import { createStackNavigator, createAppContainer } from 'react-navigation';
 
 import { Animated, Easing } from 'react-native';
 
-import Lobby from './lobby/lobby';
+import Register from './lobby/registration/register';
 import Feed from'./feed/feed';
 import Root from './root';
 
@@ -16,7 +16,7 @@ const Navigator = createStackNavigator(
 	// Pages
 	{
 		Root: Root,
-		Lobby: Lobby,
+		Register: Register,
 		Feed: Feed,
 	},
 

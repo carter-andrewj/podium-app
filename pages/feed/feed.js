@@ -1,5 +1,5 @@
 import React from 'react';
-import Component from '../utils/component';
+import Component from '../../utils/component';
 import { FlatList, Text, View, Button } from 'react-native';
 import { inject, observer } from 'mobx-react';
 

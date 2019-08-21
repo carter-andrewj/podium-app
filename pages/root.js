@@ -105,7 +105,7 @@ class Root extends Component {
 				if (result) {
 					this.props.navigation.navigate("Feed")
 				} else {
-					this.props.navigation.navigate("Lobby")
+					this.props.navigation.navigate("Register")
 				}
 			})
 			.catch(error => {
@@ -114,7 +114,7 @@ class Root extends Component {
 					state => state
 						.set("error", error)
 						.set("status", "error"),
-					() => this.props.navigation.navigate("Lobby")
+					() => this.props.navigation.navigate("Register")
 				)
 			})
 	

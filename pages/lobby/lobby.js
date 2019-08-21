@@ -5,7 +5,7 @@ import { Text, View, Image, TouchableOpacity,
 import { inject, observer } from 'mobx-react';
 
 import Screen from '../screen';
-import { Button, RoundButton } from '../../components/buttons';
+import { Button, RoundButton } from '../../components/button';
 
 import styles from '../../styles/styles';
 
@@ -95,7 +95,7 @@ class Lobby extends Component {
 							icon="info"
 						/>
 						<RoundButton
-							onPress={this.props.toRegister}
+							onPress={() => this.props.navigation.navigate("Register")}
 							icon="user-plus"
 						/>
 					</View>

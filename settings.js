@@ -1,4 +1,9 @@
-const constants = {
+const settings = {
+
+	fonts: {
+		body: "Varela",
+		titles: "Varela Round"
+	},
 
 	colors: {
 
@@ -32,6 +37,12 @@ const constants = {
 
 	},
 
+	iconSize: {
+		small: 15,
+		medium: 22,
+		large: 32
+	},
+
 	size: {
 		smallest: 1,
 		smaller: 2,
@@ -54,4 +65,4 @@ const constants = {
 
 }
 
-export default constants;
+export default settings;

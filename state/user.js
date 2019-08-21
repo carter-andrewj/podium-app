@@ -5,7 +5,7 @@ import Loadable from './loadable';
 
 class UserProfile extends Loadable {
 	fetch(update) {
-		this.store.api
+		return this.store.api
 			.task("load profile", { address: this.address })
 			.subscribe(update)
 	}
@@ -13,7 +13,7 @@ class UserProfile extends Loadable {
 
 class UserPosts extends Loadable {
 	fetch(update) {
-		this.store.api
+		return this.store.api
 			.task("index posts", { address: this.address })
 			.subscribe(update)
 	}
@@ -21,7 +21,7 @@ class UserPosts extends Loadable {
 
 class UserFollowers extends Loadable {
 	fetch(update) {
-		this.store.api
+		return this.store.api
 			.task("index followers", { address: this.address })
 			.subscribe(update)
 	}
@@ -29,7 +29,7 @@ class UserFollowers extends Loadable {
 
 class UserFollowing extends Loadable {
 	fetch(update) {
-		this.store.api
+		return this.store.api
 			.task("index following", { address: this.address })
 			.subscribe(update)
 	}
@@ -37,7 +37,7 @@ class UserFollowing extends Loadable {
 
 class UserTopics extends Loadable {
 	fetch(update) {
-		this.store.api
+		return this.store.api
 			.task("index topics", { address: this.address })
 			.subscribe(update)
 	}
@@ -45,7 +45,7 @@ class UserTopics extends Loadable {
 
 class UserPDM extends Loadable {
 	fetch(update) {
-		this.store.api
+		return this.store.api
 			.task("load PDM", { address: this.address })
 			.subscribe(update)
 	}
@@ -53,7 +53,7 @@ class UserPDM extends Loadable {
 
 class UserADM extends Loadable {
 	fetch(update) {
-		this.store.api
+		return this.store.api
 			.task("load ADM", { address: this.address })
 			.subscribe(update)
 	}
@@ -61,7 +61,7 @@ class UserADM extends Loadable {
 
 class UserIntegrity extends Loadable {
 	fetch(update) {
-		this.store.api
+		return this.store.api
 			.task("load integrity", { address: this.address })
 			.subscribe(update)
 	}
@@ -69,7 +69,7 @@ class UserIntegrity extends Loadable {
 
 class UserRights extends Loadable {
 	fetch(update) {
-		this.store.api
+		return this.store.api
 			.task("load rights", { address: this.address })
 			.subscribe(update)
 	}
@@ -77,7 +77,7 @@ class UserRights extends Loadable {
 
 class UserSanctions extends Loadable {
 	fetch(update) {
-		this.store.api
+		return this.store.api
 			.task("load sanctions", { address: this.address })
 			.subscribe(update)
 	}

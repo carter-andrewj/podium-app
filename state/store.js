@@ -1,10 +1,11 @@
 import { observable, computed, action } from "mobx";
+import { Permissions } from 'expo';
 import * as SecureStore from 'expo-secure-store';
 import * as Font from 'expo-font';
 
 import API from './api';
 import UserStore from './userStore';
-import Session from './session'
+import Session from './session';
 
 
 export default class Store {
@@ -21,10 +22,31 @@ export default class Store {
 	@observable accounts = {};
 
 	@observable config = {
+
 		records: {
 			reload: 1000 * 10,
 			lifetime: 1000 * 60
+		},
+
+		validation: {
+			delay: 1000,
+			identity: {
+				maxLength: 20,
+				chars: /[^A-Z0-9_-]/i
+			},
+			passphrase: {
+				minLength: 7,
+				maxLength: 36
+			},
+			name: {
+				maxLength: 50
+			}
 		}
+
+	}
+
+	@observable permissions = {
+		camera: false
 	}
 
 
@@ -41,6 +63,8 @@ export default class Store {
 		this.loadAccounts = this.loadAccounts.bind(this)
 		this.addAccount = this.addAccount.bind(this)
 		this.setAccount = this.setAccount.bind(this)
+
+		this.permitCamera = this.permitCamera.bind(this)
 
 	}
 
@@ -159,6 +183,23 @@ export default class Store {
 					this.error = error
 					reject()
 				})
+		})
+	}
+
+
+
+
+	permitCamera() {
+		return new Promise((resolve, reject) => {
+			if (Constants.platform.ios) {
+				Permissions
+					.askAsync(Permissions.CAMERA_ROLL)
+					.then(({ status }) => {
+						this.permissions.camera = (status === "granted")
+						resolve(this.permissions.camera)
+					})
+					.catch(reject)
+			}
 		})
 	}
 

@@ -1,4 +1,4 @@
-import { observable, action } from "mobx";
+import { computed, observable, action, decorate } from "mobx";
 
 
 
@@ -13,12 +13,14 @@ export default class Loadable {
 
 	constructor(context) {
 
-		this.lifetime = context.config.reloadLifetime
+		// this.store = context.store
+		this.lifetime = context.store.config.records.reload
 		this.next = new Date().now - this.lifetime
 
 		this.load = this.load.bind(this)
 		this.set = this.set.bind(this)
 		this.surface = this.surface.bind(this)
+		this.update = this.update.bind(this)
 
 		this.fetch = this.fetch.bind(context)
 
@@ -77,12 +79,19 @@ export default class Loadable {
 		return this
 	}
 
-	surface() {
-		arguments.forEach(a => {
+	surface(...args) {
+		args.forEach(a => {
+
+			// Define getter
 			Object.defineProperty(this, a, {
-				get: computed(() => this.value[a])
+				get: () => this.value[a]
 			})
+
+			// Make getter a MobX computed property
+			decorate(this, { a: computed })
+
 		})
+		return this
 	}
 
 }

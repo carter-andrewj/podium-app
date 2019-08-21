@@ -2,6 +2,7 @@ import React from 'react';
 import Component from '../../utils/component';
 import { Text, View, TextInput } from 'react-native';
 import { inject, observer } from 'mobx-react';
+import * as ImagePicker from 'expo-image-picker';
 
 import { fromJS } from 'immutable';
 
@@ -54,6 +55,7 @@ class Register extends Component {
 					confirmPlaceholder: true
 				},
 				picture: {
+					uri: null,
 					value: "",
 					extension: ""
 				},
@@ -452,6 +454,40 @@ class Register extends Component {
 
 
 
+// PICTURE ENTRY
+
+	selectPicture() {
+		this.store
+			.permitCamera()
+			.then(permission => {
+				if (permission) {
+					ImagePicker
+						.launchImageLibraryAsync({
+							mediaTypes: "Images",
+							allowsEditing: true,
+							aspect: [1, 1],
+							base64: true,
+							exif: true
+						})
+						.then(({ cancelled, uri, base64 }) => {
+							if (!cancelled) {
+								this.updateState(state => state.setIn(
+									["profile", "picture"],
+									{
+										uri: uri,
+										value: base64
+									}
+								))
+								console.log(uri, type)
+							}
+						})
+				}
+			})
+			.catch(console.error)
+	}
+
+
+
 
 // NAME ENTRY
 
@@ -666,9 +702,12 @@ class Register extends Component {
 				<View style={styles.container}>
 					<View style={styles.spacer} />
 					{title}
-					<Text>
-						[Picture Here]
-					</Text>
+					<TouchableOpacity onPress={this.selectPicture}>
+						<Image
+							style={styles.lobby.profilePic}
+							source={{ uri: profile.picture.uri }}
+						/>
+					</TouchableOpacity>
 					<TextInput
 						autoCapitalize="words"
 						style={styles.input.oneLine}

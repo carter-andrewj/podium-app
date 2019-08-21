@@ -15,6 +15,7 @@
     "expo": "^33.0.0",
     "expo-font": "~5.0.1",
     "expo-fontawesome": "^0.1.2",
+    "expo-image-picker": "~5.0.2",
     "expo-secure-store": "~5.0.1",
     "immutable": "^4.0.0-rc.12",
     "mobx": "^5.10.1",

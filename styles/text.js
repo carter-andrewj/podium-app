@@ -1,19 +1,20 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
-import config from './constants';
+import settings from '../settings';
 import general from './general';
 
 
 const body = {
-	fontFamily: "Varela",
-	fontSize: config.fontsize.normal,
-	color: config.colors.neutralDarkest,
+	fontFamily: settings.fonts.body,
+	fontSize: settings.fontsize.normal,
+	color: settings.colors.neutralDarkest,
+	textAlign: "left"
 }
 
 const title = {
-	fontFamily: "Varela Round",
-	fontSize: config.fontsize.huge,
-	color: config.colors.major,
+	fontFamily: settings.fonts.titles,
+	fontSize: settings.fontsize.huge,
+	color: settings.colors.major,
 	textAlign: "center",
 	paddingBottom: 0.02 * Dimensions.get("window").height,
 }
@@ -24,37 +25,37 @@ const text = StyleSheet.create({
 	body: body,
 
 	wait: {
-		color: config.colors.neutralDarkest,
+		color: settings.colors.neutralDarkest,
 	},
 
 	good: {
-		color: config.colors.good,
+		color: settings.colors.good,
 	},
 
 	bad: {
-		color: config.colors.bad,
+		color: settings.colors.bad,
 	},
 
 	white: {
-		color: config.colors.white
+		color: settings.colors.white
 	},
 
 	error: {
 		...body,
-		color: config.colors.bad,
-		fontSize: config.fontsize.smallish,
+		color: settings.colors.bad,
+		fontSize: settings.fontsize.smallish,
 	},
 
 	success: {
 		...body,
-		color: config.colors.good,
-		fontSize: config.fontsize.smallish,
+		color: settings.colors.good,
+		fontSize: settings.fontsize.smallish,
 	},
 
 	info: {
 		...body,
-		color: config.colors.neutralDarkest,
-		fontSize: config.fontsize.smallish,
+		color: settings.colors.neutralDarkest,
+		fontSize: settings.fontsize.smallish,
 	},
 
 	title: title,
@@ -66,7 +67,7 @@ const text = StyleSheet.create({
 
 	subtitle: {
 		...title,
-		fontSize: config.fontsize.normal
+		fontSize: settings.fontsize.normal
 	}
 
 });

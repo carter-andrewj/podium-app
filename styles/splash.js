@@ -1,6 +1,6 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
-import config from './constants';
+import settings from '../settings';
 import general from './general';
 
 
@@ -9,7 +9,7 @@ const splash = StyleSheet.create({
 	background: {
 		...general.screen,
 		position: "absolute",
-		backgroundColor: config.colors.major
+		backgroundColor: settings.colors.major
 	},
 
 	iconBox: {

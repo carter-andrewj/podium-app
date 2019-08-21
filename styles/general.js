@@ -1,9 +1,10 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
-import config from './constants';
+import settings from '../settings';
 
 
 const container = {
+	position: "relative",
 	flex: 1,
 	width: "100%",
 	height: "auto",
@@ -16,7 +17,7 @@ const container = {
 }
 
 const card = {
-	shadowColor: config.colors.neutralDark,
+	shadowColor: settings.colors.neutralDark,
 	shadowOpacity: 1.0,
 	shadowRadius: 3,
 	shadowOffset: {
@@ -24,20 +25,6 @@ const card = {
 		height: 0
 	}
 }
-
-const button = {
-	flex: 0,
-	alignItems: "center",
-	justifyContent: "center",
-	width: Dimensions.get("window").width * 0.46,
-	height: Dimensions.get("window").width * 0.12,
-	backgroundColor: config.colors.white,
-	borderRadius: Dimensions.get("window").width * 0.12,
-	margin: Dimensions.get("window").width * 0.02,
-	padding: config.size.smallish,
-	overflow: "hidden"
-}
-
 
 const screen = {
 	...container,
@@ -50,7 +37,7 @@ const general = StyleSheet.create({
 
 	statusBar: {
 		flex: 1,
-		backgroundColor: config.colors.major
+		backgroundColor: settings.colors.major
 	},
 
 	container: container,
@@ -80,17 +67,14 @@ const general = StyleSheet.create({
 
 	shadow: {
 		shadowRadius: 100,
-		shadowColor: config.colors.neutralDarkest
+		shadowColor: settings.colors.neutralDarkest
+	},
+
+	transparent: {
+		opacity: 0.0
 	},
 
 	card: card,
-
-	button: button,
-
-	buttonCard: {
-		...button,
-		...card
-	},
 
 });
 
