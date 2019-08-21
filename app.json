@@ -23,8 +23,14 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+
     "ios": {
       "supportsTablet": true
+    },
+
+    "android": {
+      "permissions": ["INTERNET"]
     }
+
   }
 }

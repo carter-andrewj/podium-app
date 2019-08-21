@@ -137,6 +137,15 @@ class Root extends Component {
 					]}
 					source={require("../assets/glyph.png")}
 				/>
+				<Text style={[styles.text.body, styles.text.white]}>
+					Fonts: {this.props.store.load.fonts ? "yes" : "no"}
+				</Text>
+				<Text style={[styles.text.body, styles.text.white]}>
+					Ledger: {this.props.store.load.ledger ? "yes" : "no"}
+				</Text>
+				<Text style={[styles.text.body, styles.text.white]}>
+					Accounts: {this.props.store.load.accounts ? "yes" : "no"}
+				</Text>
 			</View>
 
 			{this.props.store.loaded && this.props.store.session.identity ?

@@ -3,6 +3,8 @@ import Component from '../../utils/component';
 import { Text, View, TextInput } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
+import Button from '../../../components/button';
+
 import styles from '../../styles/styles';
 
 
@@ -19,17 +21,13 @@ class SignIn extends Component {
 			identity: "",
 			passphrase: "",
 			error: false,
-			loading: false,
-			focus: null,
-			changedFocus: false
+			loading: false
 		}
 
 		this.identity = null;
 		this.passphrase = null;
 
 		this.submit = this.submit.bind(this);
-
-		this.focusser = null;
 
 	}
 
@@ -57,32 +55,6 @@ class SignIn extends Component {
 	}
 
 
-	setFocus(target) {
-		const current = this.getState("focus")
-		this.updateState(
-			state => state
-				.set("focus", target)
-				.set("changedFocus", true),
-			(current !== target) ?
-				target.focus
-				: null
-		)
-	}
-
-	loseFocus() {
-		clearTimeout(this.focusser)
-		this.focusser = setTimeout(
-			() => {
-				if (!this.state.changedFocus) {
-					this.updateState(
-						state => state.set("changedFocus", false),
-						this.state.focus.focus
-					)
-				}
-			},
-			1
-		)
-	}
 
 
 
@@ -94,12 +66,28 @@ class SignIn extends Component {
 
 			<View style={style.keyboard.above}>
 
+				<View style={styles.lobby.header}>
+
+					<View style={[
+							styles.containerRow,
+							{ justifyContent: "flex-end" }
+						]}>
+						<Button
+							onPress={() => this.props.navigation.navigate("register")}
+							label="new user"
+							iconColor={settings.colors.minor}
+							round={true}
+						/>
+					</View>
+
+				</View>
+
 				<View style={style.lobby.header}>
-					<RoundButton
+					<Button
 						onPress={this.props.navigation.goBack()}
 						icon="arrow-left"
 					/>
-					<RoundButton
+					<Button
 						onPress={this.props.navigation.to("Register")}
 						icon="user-plus"
 					/>
@@ -118,7 +106,7 @@ class SignIn extends Component {
 						`@${this.state.identity}` :
 						""
 					}
-					placeholder="@identity"
+					placeholder="@ident"
 
 					onFocus={() => this.setFocus(this.identity)}
 					onBlur={this.loseFocus}
@@ -157,7 +145,7 @@ class SignIn extends Component {
 						:
 						this.state.loading ?
 							<Text style={styles.text.info}>
-								Signing In
+								signing in
 							</Text>
 						:
 						null
