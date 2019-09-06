@@ -10,6 +10,17 @@ import keyboard from './keyboard';
 import splash from './splash';
 import lobby from './lobby';
 
+import alerts from './alerts';
+
+import feed from './feed';
+import post from './post';
+import newPost from './newPost';
+
+import profile from './profile';
+import wallet from './wallet';
+
+import layout from './layout';
+
 
 const styles = {
 
@@ -24,6 +35,17 @@ const styles = {
 	// Pages
 	splash: { ...splash },
 	lobby: { ...lobby },
+
+	alerts: { ...alerts },
+
+	feed: { ...feed },
+	post: { ...post },
+	newPost: { ...newPost },
+
+	profile: { ...profile },
+	wallet: { ...wallet },
+
+	layout: { ...layout },
 
 }
 

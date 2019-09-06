@@ -108,7 +108,7 @@ export default class Task {
 
 				// Update subscribers
 				if (this.promise) {
-					this.reject(this.error)
+					this.reject(data.error)
 				}
 
 			} else {
@@ -122,7 +122,7 @@ export default class Task {
 
 				// Update subscribers
 				if (this.promise) {
-					this.resolve(this.result)
+					this.resolve(data.result)
 				}
 
 			}
@@ -140,9 +140,11 @@ export default class Task {
 		if (this.complete) {
 			return new Promise((resolve, reject) => {
 				if (this.error) {
-					reject(this.error)
+					const error = this.error
+					reject(error)
 				} else {
-					resolve(this.result)
+					const result = this.result
+					resolve(result)
 				}
 			})
 		} else {

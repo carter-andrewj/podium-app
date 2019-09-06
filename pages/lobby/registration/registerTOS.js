@@ -1,5 +1,5 @@
 import React from 'react';
-import Component from '../../../utils/component';
+import Page from '../../../utils/component';
 import { Text, View, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
@@ -15,7 +15,7 @@ import RegisterWrapper from './registerWrapper';
 
 @inject("store")
 @observer
-class RegisterTOS extends Component {
+class RegisterTOS extends Page {
 
 	constructor() {
 
@@ -37,7 +37,6 @@ class RegisterTOS extends Component {
 
 
 	submit() {
-		console.log("submit", this.state.agreed)
 		if (this.state.agreed) {
 
 			const params = this.props.navigation.state.params
@@ -51,7 +50,10 @@ class RegisterTOS extends Component {
 				"Name",
 				{
 					...this.props.navigation.state.params,
-					task: task,
+					task: {
+						promise: task,
+						message: `Registering @${params.identity}`
+					}
 				}
 			)
 
@@ -65,13 +67,12 @@ class RegisterTOS extends Component {
 
 	render() {
 
-		return <RegisterWrapper keyboard={false}>
+		return <RegisterWrapper
+			navigation={this.props.navigation}
+			keyboard={false}>
 
 			<View style={styles.spacer} />
-
-			<Text style={[styles.text.heading, styles.lobby.heading]}>
-				Terms of Service
-			</Text>
+			<View style={styles.spacer} />
 
 			<ScrollView contentContainerStyle={styles.lobby.tos}>
 				<Text style={styles.text.body}>

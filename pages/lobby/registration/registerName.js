@@ -1,5 +1,5 @@
 import React from 'react';
-import Component from '../../../utils/component';
+import Page from '../../../utils/page';
 import { Text, View, TextInput } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
@@ -11,7 +11,7 @@ import RegisterWrapper from './registerWrapper';
 
 @inject("store")
 @observer
-class RegisterName extends Component {
+class RegisterName extends Page {
 
 	constructor() {
 		super()
@@ -34,14 +34,12 @@ class RegisterName extends Component {
 	}
 
 
-	componentDidMount() {
-		const identity = this.props.navigation.getParam("identity")
-		const name = this.props.navigation.getParam("name")
+	pageWillFocus(params) {
 		this.updateState(
 			state => state
-				.set("identity", identity)
-				.set("value", name),
-			name ? this.validate : null
+				.set("identity", params.identity)
+				.set("value", params.name || ""),
+			params.name ? this.validate : null
 		)
 	}
 
@@ -70,7 +68,7 @@ class RegisterName extends Component {
 			} else {
 
 				// Get name
-				let name = this.getState("value")
+				let name = this.state.value
 
 				this.timer = setTimeout(
 					() => {
@@ -80,7 +78,7 @@ class RegisterName extends Component {
 
 						// Ensure username is no greater than the maximum length
 						if (name.length > maxLength) {
-							error = `Name cannot be longer than ${maxLength} characters`
+							error = `your name can't be longer than ${maxLength} characters`
 						}
 
 						// Check if an error has been found
@@ -118,10 +116,12 @@ class RegisterName extends Component {
 			.then(valid => {
 				if (valid) {
 					this.props.navigation.navigate(
-						"Bio",
+						"Picture",
 						{
 							...this.props.navigation.state.params,
-							name: this.state.value
+							name: this.state.value.length > 0 ?
+								this.state.value :
+								undefined
 						}
 					)
 				}
@@ -136,11 +136,16 @@ class RegisterName extends Component {
 
 	render() {
 
-		return <RegisterWrapper skip={this.submit} keyboard={true}>
-
-			<Text style={[styles.text.heading, styles.lobby.heading]}>
-				Choose a Display Name
-			</Text>
+		return <RegisterWrapper
+			hideBack={true}
+			action={this.submit}
+			actionIcon={this.state.value.length > 0 ?
+				"arrow-right"
+				: null
+			}
+			actionLabel="skip"
+			keyboard={true}
+			navigation={this.props.navigation}>
 
 			<TextInput
 
@@ -148,13 +153,12 @@ class RegisterName extends Component {
 
 				style={styles.input.oneLine}
 				autoFocus={true}
+				autoCorrect={false}
 				autoCapitalize="words"
 				
 				onChangeText={this.type}
 				value={this.state.value}
 				placeholder={this.state.identity}
-
-				onBlur={this.input.focus}
 
 				returnKeyType="next"
 				onSubmitEditing={this.submit}
@@ -163,13 +167,24 @@ class RegisterName extends Component {
 
 			<View style={styles.input.caption}>
 				{
-
+					this.state.validating ?
+						<Text style={styles.text.white}>
+							{" "}
+						</Text>
+					:
 					this.state.error ?
 						<Text style={styles.text.error}>
 							{this.state.error}
 						</Text>
 					:
-					null
+					this.state.value.length > 0 ?
+						<Text style={styles.text.white}>
+							nice to meet you, {this.state.value.split(" ")[0]}
+						</Text>
+					:
+					<Text style={styles.text.white}>
+						what should we call you?
+					</Text>
 				}
 			</View>
 

@@ -19,10 +19,11 @@ export default class Loadable {
 
 		this.load = this.load.bind(this)
 		this.set = this.set.bind(this)
-		this.surface = this.surface.bind(this)
 		this.update = this.update.bind(this)
 
 		this.fetch = this.fetch.bind(context)
+
+		this.surface = this.surface.bind(this)
 
 	}
 
@@ -80,18 +81,23 @@ export default class Loadable {
 	}
 
 	surface(...args) {
-		args.forEach(a => {
 
+		args.forEach(a => {
+			
 			// Define getter
 			Object.defineProperty(this, a, {
-				get: () => this.value[a]
+				get: function() {
+					return this.value ? this.value[a] : null
+				}
 			})
 
 			// Make getter a MobX computed property
 			decorate(this, { a: computed })
 
 		})
+
 		return this
+
 	}
 
 }

@@ -1,6 +1,7 @@
 import React from 'react';
-import { SafeAreaView } from 'react-native';
+import { View } from 'react-native';
 import { Provider } from 'mobx-react';
+import { registerRootComponent } from 'expo';
 
 import Store from './state/store';
 
@@ -13,10 +14,14 @@ import styles from './styles/styles';
 let store = new Store();
 
 
-export default function App() {
-	return (
-		<Provider store={store}>
+class App extends React.Component {
+	render() {
+		return <Provider store={store}>
 			<Navigator />
 		</Provider>
-	);
+	}
 }
+
+registerRootComponent(App);
+
+export default App;

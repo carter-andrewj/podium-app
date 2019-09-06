@@ -6,20 +6,10 @@ import text from './text';
 
 
 
-const box = {
-	...general.container,
-	minWidth: Dimensions.get("window").width * 0.14,
-	minHeight: Dimensions.get("window").width * 0.14,
-	maxHeight: Dimensions.get("window").width * 0.14,
-}
-
 
 const button = StyleSheet.create({
 
-	box: box,
-
 	round: {
-		...box,
 		borderRadius: Dimensions.get("window").width * 0.07,
 	},
 
@@ -27,12 +17,28 @@ const button = StyleSheet.create({
 		...text.title,
 		fontSize: settings.fontsize.normal,
 		padding: Dimensions.get("window").width * 0.04,
-		paddingTop: Dimensions.get("window").width * 0.035,
+		paddingTop: Dimensions.get("window").width * 0.04,
 		margin: 0
 	},
 
 	icon: {
 		color: settings.colors.major
+	},
+
+
+	caption: {
+		position: "absolute",
+		width: 0.08 * Dimensions.get("window").width,
+		right: -0.09 * Dimensions.get("window").width,
+	},
+
+	captionText: {
+		...text.title,
+		textAlign: "left",
+		fontSize: settings.fontsize.smaller,
+		fontWeight: 600,
+		color: settings.colors.major,
+		paddingBottom: 0
 	}
 
 })

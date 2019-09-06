@@ -7,16 +7,24 @@ import general from './general';
 const body = {
 	fontFamily: settings.fonts.body,
 	fontSize: settings.fontsize.normal,
-	color: settings.colors.neutralDarkest,
-	textAlign: "left"
+	color: settings.colors.black,
+	textAlign: "left",
+	padding: 0,
+	backgroundColor: "transparent"
 }
 
 const title = {
 	fontFamily: settings.fonts.titles,
-	fontSize: settings.fontsize.huge,
+	fontSize: settings.fontsize.largish,
 	color: settings.colors.major,
 	textAlign: "center",
 	paddingBottom: 0.02 * Dimensions.get("window").height,
+	backgroundColor: "transparent"
+}
+
+const caption = {
+	...body,
+	fontSize: settings.fontsize.smallish
 }
 
 
@@ -24,45 +32,76 @@ const text = StyleSheet.create({
 
 	body: body,
 
+	caption: caption,
+
 	wait: {
-		color: settings.colors.neutralDarkest,
+		...caption,
+		color: settings.colors.neutralDark,
 	},
 
 	good: {
+		...caption,
 		color: settings.colors.good,
 	},
 
 	bad: {
+		...caption,
 		color: settings.colors.bad,
 	},
 
 	white: {
+		...caption,
 		color: settings.colors.white
 	},
 
 	error: {
-		...body,
-		color: settings.colors.bad,
-		fontSize: settings.fontsize.smallish,
+		...caption,
+		color: settings.colors.white,
+		backgroundColor: settings.colors.bad,
+		paddingLeft: 0.008 * Dimensions.get("window").height,
+		paddingRight: 0.008 * Dimensions.get("window").height,
 	},
 
 	success: {
-		...body,
+		...caption,
 		color: settings.colors.good,
-		fontSize: settings.fontsize.smallish,
 	},
 
 	info: {
-		...body,
-		color: settings.colors.neutralDarkest,
-		fontSize: settings.fontsize.smallish,
+		...caption,
+		color: settings.colors.info,
+	},
+
+	user: {
+		color: settings.colors.major
+	},
+
+	topic: {
+		color: settings.colors.minor
+	},
+
+	group: {
+		color: settings.colors.note
+	},
+
+	url: {
+		color: settings.colors.info,
+		textDecorationLine: "underline"
+	},
+
+	pdm: {
+		backgroundColor: settings.colors.major,
+		color: settings.colors.white,
+		fontSize: settings.fontsize.tiny,
+		fontFamily: "Avenir",
+		fontWeight: "bold"
 	},
 
 	title: title,
 
 	heading: {
 		...title,
-		paddingBottom: 30
+		paddingBottom: 0.015 * Dimensions.get("window").height,
 	},
 
 	subtitle: {
@@ -71,5 +110,7 @@ const text = StyleSheet.create({
 	}
 
 });
+
+
 
 export default text;

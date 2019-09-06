@@ -1,10 +1,13 @@
 import React from 'react';
-import Component from '../../../utils/component';
-import { Text, View, TouchableOpacity } from 'react-native';
+import Page from '../../../utils/page';
+import { Text, View, TouchableOpacity, Image } from 'react-native';
 import { inject, observer } from 'mobx-react';
 import * as ImagePicker from 'expo-image-picker';
 
+import settings from '../../../settings';
 import styles from '../../../styles/styles';
+
+import Button from '../../../components/button';
 
 import RegisterWrapper from './registerWrapper';
 
@@ -12,7 +15,7 @@ import RegisterWrapper from './registerWrapper';
 
 @inject("store")
 @observer
-class RegisterPicture extends Component {
+class RegisterPicture extends Page {
 
 	constructor() {
 		super()
@@ -29,18 +32,18 @@ class RegisterPicture extends Component {
 	}
 
 
-	componentDidMount() {
-		const picture = this.props.navigation.getParam("picture")
-		const uri = this.props.navigation.getParam("uri")
-		this.updateState(state => state
-			.set("value", picture)
-			.set("uri", uri)
-		)
+	pageWillFocus(params) {
+		if (params.picture) {
+			this.updateState(state => state
+				.set("value", picture)
+				.set("uri", uri)
+			)
+		}
 	}
 
 
 	select() {
-		this.store
+		this.props.store
 			.permitCamera()
 			.then(permission => {
 				if (permission) {
@@ -58,7 +61,6 @@ class RegisterPicture extends Component {
 									.set("uri", uri)
 									.set("value", base64)
 								)
-								console.log(uri)
 							}
 						})
 						.catch(console.error)
@@ -87,41 +89,57 @@ class RegisterPicture extends Component {
 
 	render() {
 
-		let image;
-		if (this.state.uri) {
-			image = this.state.uri
-		} else {
-			image = "../assets/profile-placeholder.png"
-		}
+		return <RegisterWrapper
+			action={this.submit}
+			actionIcon={this.state.uri.length > 0 ?
+				"arrow-right"
+				: null
+			}
+			actionLabel="skip"
+			navigation={this.props.navigation}>
 
-		return <RegisterWrapper skip={this.submit}>
+			<View style={styles.spacer} />
 
-			<TouchableOpacity onPress={this.select}>
-				<Image
-					style={styles.lobby.profilePic}
-					source={image}
-				/>
-			</TouchableOpacity>
-
-			<Text style={[styles.text.heading, styles.lobby.heading]}>
-				Choose a Profile Picture
+			<Text style={styles.lobby.heading}>
+				who are you, visually?
 			</Text>
 
+			<TouchableOpacity onPress={this.select}>
+				<View style={styles.lobby.profilePicHolder}>
+					<Image
+						style={styles.lobby.profilePic}
+						source={this.state.value ?
+							{ uri: this.state.uri } :
+							require( "../../../assets/profile-placeholder.png")
+						}
+					/>
+				</View>
+			</TouchableOpacity>
+
 			<View style={styles.input.caption}>
-				{
-					this.state.error ?
-						<Text style={styles.text.error}>
-							{this.state.error}
-						</Text>
+				{this.state.error ?
+					<Text style={styles.text.error}>
+						{this.state.error}
+					</Text>
 					:
-					null
+					<Text style={styles.text.white}>
+						{" "}
+					</Text>
 				}
 			</View>
 
-			<RoundButton
-				icon="arrow-right"
-				onPress={this.submit}
-			/>
+			<View style={[styles.containerRow,
+					{ justifyContent: "center" }
+				]}>
+				<Button
+					inactive={!this.state.value}
+					icon="arrow-right"
+					iconColorOff={settings.colors.neutral}
+					color={settings.colors.white}
+					round={true}
+					onPress={this.submit}
+				/>
+			</View>
 
 		</RegisterWrapper>
 		

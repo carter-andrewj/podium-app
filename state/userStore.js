@@ -12,6 +12,7 @@ export default class UserStore {
 
 		this.add = this.add.bind(this)
 
+		this.get = this.get.bind(this)
 		this.is = this.is.bind(this)
 		this.find = this.find.bind(this)
 
@@ -26,7 +27,12 @@ export default class UserStore {
 		// Otherwise, create the user
 		this.index.set(address, new User(this.store, address))
 		return this.index.get(address)
-		
+
+	}
+
+
+	get(address) {
+		return this.index.get(address)
 	}
 
 
@@ -45,7 +51,7 @@ export default class UserStore {
 			this.store.api
 				.task("check user", { target: id })
 				.subscribe(onUpdate)
-				.then(resolve)
+				.then(result => resolve(result.address))
 				.catch(reject)
 		})
 	}

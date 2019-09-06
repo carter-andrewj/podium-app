@@ -1,5 +1,5 @@
 import React from 'react';
-import Component from '../../../utils/component';
+import Page from '../../../utils/page';
 import { Text, View, TextInput } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
@@ -11,7 +11,7 @@ import RegisterWrapper from './registerWrapper';
 
 @inject("store")
 @observer
-class RegisterIdentity extends Component {
+class RegisterIdentity extends Page {
 
 	constructor() {
 		super()
@@ -33,11 +33,10 @@ class RegisterIdentity extends Component {
 	}
 
 
-	componentDidMount() {
-		const identity = this.props.navigation.getParam("identity")
-		if (identity) {
+	pageWillFocus(params) {
+		if (params.identity) {
 			this.updateState(
-				state => state.set("value", identity),
+				state => state.set("value", params.identity),
 				this.validate
 			)
 		}
@@ -70,9 +69,10 @@ class RegisterIdentity extends Component {
 			} else {
 
 				// Get id
-				let identity = this.getState("value")
+				let identity = this.state.value
 
 				// Unpack config
+				const minLength = this.props.store.config.validation.identity.minLength;
 				const maxLength = this.props.store.config.validation.identity.maxLength;
 
 				// Ignore empty IDs
@@ -85,8 +85,9 @@ class RegisterIdentity extends Component {
 							let error;
 
 							// Ensure an identity has been entered, if performing full validation
-							if (identity.length === 0) {
-								error = "Please enter an Identity"
+							if (identity.length < minLength) {
+								error = `Identity must have at least ${minLength} ` +
+										`character${minLength === 1 ? "" : "s"}`
 
 							// Ensure username is no greater than the maximum length
 							} else if (identity.length > maxLength) {
@@ -112,14 +113,14 @@ class RegisterIdentity extends Component {
 									() => this.props.store.users
 										.is(identity)
 										.then(result => {
-											if (this.getState("value") !== identity) {
+											if (this.state.value !== identity) {
 												resolve()
-											} else if (!result) {
+											} else if (result) {
 												this.updateState(
 													state => state
 														.set("validating", false)
 														.set("valid", false)
-														.set("error", "Identity Unavailable"),
+														.set("error", "this identity is already owned"),
 													() => resolve(false)
 												)
 											} else {
@@ -171,11 +172,13 @@ class RegisterIdentity extends Component {
 	render() {
 
 		return <RegisterWrapper
+			action={() => this.props.navigation.navigate("SignIn")}
+			actionLabel="sign in"
 			hideBack={true}
 			keyboard={true}
 			navigation={this.props.navigation}>
 
-			<Text style={[styles.text.heading, styles.lobby.heading]}>
+			<Text style={styles.lobby.heading}>
 				Welcome to Podium
 			</Text>
 
@@ -186,6 +189,7 @@ class RegisterIdentity extends Component {
 
 				style={styles.input.oneLine}
 				autoFocus={true}
+				autoCorrect={false}
 				autoCapitalize="none"
 				
 				onChangeText={this.type}
@@ -209,7 +213,7 @@ class RegisterIdentity extends Component {
 					:
 					this.state.validating ?
 						<Text style={styles.text.white}>
-							Checking Availability
+							checking availability
 						</Text>
 					:
 					this.state.error ?
@@ -218,7 +222,7 @@ class RegisterIdentity extends Component {
 						</Text>
 					:
 					<Text style={styles.text.white}>
-						Identity Available
+						identity available
 					</Text>
 				}
 			</View>

@@ -12,6 +12,7 @@ const container = {
 	backgroundColor: "transparent",
 	alignItems: 'center',
 	justifyContent: 'center',
+	alignConten: "center",
 	margin: 0,
 	padding: 0,
 }
@@ -23,7 +24,8 @@ const card = {
 	shadowOffset: {
 		width: 0,
 		height: 0
-	}
+	},
+	elevation: 4
 }
 
 const screen = {
@@ -37,7 +39,8 @@ const general = StyleSheet.create({
 
 	statusBar: {
 		flex: 1,
-		backgroundColor: settings.colors.major
+		backgroundColor: settings.colors.major,
+		color: settings.colors.white
 	},
 
 	container: container,
@@ -48,7 +51,6 @@ const general = StyleSheet.create({
 		...container,
 		flex: 1,
 		flexGrow: 2,
-		// backgroundColor: "cyan"
 	},
 
 	keyboardSpacer: {
@@ -62,7 +64,6 @@ const general = StyleSheet.create({
 		flexDirection: "row",
 		width: 0.9 * Dimensions.get("window").width,
 		justifyContent: "space-between",
-		// backgroundColor: "purple"
 	},
 
 	shadow: {

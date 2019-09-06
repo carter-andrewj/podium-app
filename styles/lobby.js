@@ -2,6 +2,18 @@ import { StyleSheet, Dimensions } from 'react-native';
 
 import settings from '../settings';
 import general from './general';
+import text from './text';
+import input from './input';
+
+
+
+
+const showButton = {
+	minWidth: 0.2 * Dimensions.get("window").width,
+	maxHeight: 0.06 * Dimensions.get("window").width,
+	marginRight: 0,
+}
+
 
 
 const lobby = StyleSheet.create({
@@ -22,20 +34,36 @@ const lobby = StyleSheet.create({
 	},
 
 	heading: {
-		color: settings.colors.white,
-		fontSize: settings.fontsize.normal,
-		marginBottom: 0,
-		paddingBottom: 0
+		...text.heading,
+		color: settings.colors.white
 	},
 
 
-	showButton: {
-		maxHeight: 0.06 * Dimensions.get("window").width,
+
+
+	showButton: showButton,
+
+	showAbove: {
+		...showButton,
+		transform: [
+			{ translateY: 0.01 * Dimensions.get("window").height }
+		]
+	},
+
+	showBelow: {
+		...showButton,
+		transform: [
+			{ translateY: -0.06 * Dimensions.get("window").height }
+		]
 	},
 
 	showButtonText: {
-		padding: 0.0 * Dimensions.get("window").width,
+		padding: 0.01 * Dimensions.get("window").width,
+		paddingTop: 0,
+		margin: 0,
+		color: settings.colors.white
 	},
+
 
 
 
@@ -76,39 +104,66 @@ const lobby = StyleSheet.create({
 		maxWidth: 0.5 * Dimensions.get("window").width
 	},
 
-	headerBox: {
-		marginTop: 0.05 * Dimensions.get("window").height,
+
+
+	profilePicHolder: {
+		...general.card,
+		overflow: "hidden",
+		minWidth: 0.7 * Dimensions.get("window").width,
+		maxWidth: 0.7 * Dimensions.get("window").width,
+		minHeight: 0.7 * Dimensions.get("window").width,
+		maxHeight: 0.7 * Dimensions.get("window").width,
+		margin: 0.04 * Dimensions.get("window").width,
+		borderTopLeftRaidus: 0.01 * Dimensions.get("window").width,
+		borderTopRightRaidus: 0.01 * Dimensions.get("window").width,
+		borderBottomLeftRaidus: 0.01 * Dimensions.get("window").width,
+		borderBottomRightRadius: 0.2 * Dimensions.get("window").width,
+		backgroundColor: settings.colors.white
 	},
 
-	logoBox: {
-		maxHeight: 0.6 * Dimensions.get("window").height,
+	profilePic: {
+		width: 0.7 * Dimensions.get("window").width,
+		height: 0.7 * Dimensions.get("window").width,
+		resizeMode: "contain"
 	},
 
-	logo: {
-		flex: 1,
-		width: 0.8 * Dimensions.get("window").width,
-		minHeight: 0.51 * Dimensions.get("window").width,
-		resizeMode: "contain",
-		...general.card
+
+
+	bioBox: {
+		...input.multiLine,
+		padding: 0.035 * Dimensions.get("window").width,
+		paddingTop: 0.035 * Dimensions.get("window").width,
+		paddingBottom: 0.035 * Dimensions.get("window").width,
 	},
 
-	versionNotice: {
-		...general.text,
-		fontSize: settings.fontsize.small,
-		color: settings.colors.white,
-		alignSelf: "center",
-		margin: 0
+
+	task: {
+		...general.container,
+		position: "absolute",
+		margin: 0.02 * Dimensions.get("window").width,
+		width: 0.96 * Dimensions.get("window").width,
+		minHeight: 2.0 * settings.fontsize.smallish,
+		backgroundColor: settings.colors.white,
+		borderRadius: 0.02 * Dimensions.get("window").width,
 	},
 
-	signinBox: {
-		alignSelf: "flex-end",
-		maxHeight: 0.25 * Dimensions.get("window").height,
+	taskText: {
+		...text.body,
+		color: settings.colors.major,
+		fontSize: settings.fontsize.smallish
 	},
 
-	buttonBox: {
-		flexDirection: "row",
-		minHeight: 0.1 * Dimensions.get("window").height
+
+	welcome: {
+		...general.container,
+		width: 0.9 * Dimensions.get("window").width,
+	},
+
+	welcomeText: {
+		...text.white
 	}
+
+
 
 });
 

@@ -37,7 +37,6 @@ export default class API {
 		return new Promise((resolve, reject) => {
 
 			// Create websocket
-			console.log(url)
 			this.socket = io.connect(url, { transports: ["websocket"] })
 
 			// Wait for connection to be confirmed

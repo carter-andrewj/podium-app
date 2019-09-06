@@ -1,4 +1,5 @@
-import { observable, computed, action } from "mobx";
+import { Platform } from "react-native";
+import { observable, computed, action, toJS } from "mobx";
 import { Permissions } from 'expo';
 import * as SecureStore from 'expo-secure-store';
 import * as Font from 'expo-font';
@@ -23,6 +24,10 @@ export default class Store {
 
 	@observable config = {
 
+		media: {
+			source: "https://media.podium-network.com"
+		},
+
 		records: {
 			reload: 1000 * 10,
 			lifetime: 1000 * 60
@@ -31,6 +36,7 @@ export default class Store {
 		validation: {
 			delay: 1000,
 			identity: {
+				minLength: 1,
 				maxLength: 20,
 				chars: /[^A-Z0-9_-]/i
 			},
@@ -40,7 +46,16 @@ export default class Store {
 			},
 			name: {
 				maxLength: 50
+			},
+			bio: {
+				maxLength: 250
 			}
+		},
+
+		postCosts: {
+			perCharacter: 1,
+			tag: 10,
+			url: 10
 		}
 
 	}
@@ -72,7 +87,7 @@ export default class Store {
 
 	loadLedger() {
 		if (this.load.ledger) {
-			return true
+			return new Promise(resolve => resolve())
 		} else {
 			return new Promise((resolve, reject) => {
 				this.api.connect()
@@ -92,12 +107,12 @@ export default class Store {
 
 	loadFonts() {
 		if (this.load.fonts) {
-			return true
+			return new Promise(resolve => resolve())
 		} else {
 			return new Promise((resolve, reject) => {
 				Font.loadAsync({
-					"Varela": require('../assets/fonts/Varela-Regular.ttf'),
-					"Varela Round": require('../assets/fonts/VarelaRound-Regular.ttf'),
+					Varela: require('../assets/fonts/Varela-Regular.ttf'),
+					VarelaRound: require('../assets/fonts/VarelaRound-Regular.ttf'),
 				})
 				.then(() => {
 					this.load.fonts = true
@@ -149,7 +164,7 @@ export default class Store {
 					})
 					.catch(error => {
 						this.error = error
-						reject()
+						reject(error)
 					})
 
 			})
@@ -157,14 +172,15 @@ export default class Store {
 	}
 
 
-	addAccount(address, identity, passphrase) {
+	addAccount(address, keyPair, identity, passphrase) {
 		return new Promise((resolve, reject) => {
 			this.accounts[address] = {
 				identity: identity,
+				keyPair: keyPair,
 				passphrase: passphrase
 			}
 			SecureStore
-				.setItemAsync("accounts", JSON.stringify(this.accounts))
+				.setItemAsync("accounts", JSON.stringify(toJS(this.accounts)))
 				.then(resolve)
 				.catch(error => {
 					this.error = error
@@ -191,7 +207,7 @@ export default class Store {
 
 	permitCamera() {
 		return new Promise((resolve, reject) => {
-			if (Constants.platform.ios) {
+			if (Platform.OS === "ios") {
 				Permissions
 					.askAsync(Permissions.CAMERA_ROLL)
 					.then(({ status }) => {

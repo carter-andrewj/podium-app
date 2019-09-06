@@ -1,6 +1,7 @@
 import React from 'react';
 import Component from '../utils/component';
 import { inject, observer } from 'mobx-react';
+import { toJS } from 'mobx';
 
 import { Animated, Easing, View, Image, Text } from 'react-native';
 import Screen from './screen';
@@ -80,33 +81,37 @@ class Root extends Component {
 				this.props.store.loadFonts(),
 				this.props.store.loadLedger(),
 				this.props.store.loadAccounts(),
-				new Promise(resolve => setTimeout(resolve, loader.duration))
+				//new Promise(resolve => setTimeout(resolve, loader.duration))
 			])
 			.then(([font, ledger, credentials]) => {
-
-				console.log("credentials", credentials)
 
 				// Check if existing credentials were found
 				if (credentials) {
 
 					// Generate a sign-in task
-					return this.props.store.session.signIn(
-						credentials.identity,
-						credentials.passphrase
+					let signIn = this.props.store.session
+						.signIn(
+							credentials.keyPair,
+							credentials.identity,
+							credentials.passphrase
+						)
+
+					// Navigate to welcome screen
+					this.props.navigation.navigate(
+						"Welcome",
+						{
+							task: {
+								promise: signIn,
+								message: `Signing In @${credentials.identity}`
+							}
+						}
 					)
 
 				// Otherwise, load the lobby
 				} else {
-					return false
-				}
-
-			})
-			.then(result => {
-				if (result) {
-					this.props.navigation.navigate("Feed")
-				} else {
 					this.props.navigation.navigate("Register")
 				}
+
 			})
 			.catch(error => {
 				console.error(error)
@@ -137,15 +142,6 @@ class Root extends Component {
 					]}
 					source={require("../assets/glyph.png")}
 				/>
-				<Text style={[styles.text.body, styles.text.white]}>
-					Fonts: {this.props.store.load.fonts ? "yes" : "no"}
-				</Text>
-				<Text style={[styles.text.body, styles.text.white]}>
-					Ledger: {this.props.store.load.ledger ? "yes" : "no"}
-				</Text>
-				<Text style={[styles.text.body, styles.text.white]}>
-					Accounts: {this.props.store.load.accounts ? "yes" : "no"}
-				</Text>
 			</View>
 
 			{this.props.store.loaded && this.props.store.session.identity ?

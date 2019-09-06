@@ -1,4 +1,4 @@
-import { observable, computed, action } from "mobx";
+import { observable, computed, action, toJS, asFlat } from "mobx";
 
 
 
@@ -13,6 +13,8 @@ export default class Session {
 	pending = []
 	@observable feed = []
 
+	alerts = observable.array([])
+
 
 	constructor(store) {
 
@@ -25,8 +27,17 @@ export default class Session {
 		this.signIn = this.signIn.bind(this)
 		this.signOut = this.signOut.bind(this)
 
+		this.authenticate = this.authenticate.bind(this)
+		this.deauthenticate = this.deauthenticate.bind(this)
+
+		this.updateProfile = this.updateProfile.bind(this)
+
 		this.getFeed = this.getFeed.bind(this)
 
+	}
+
+	@computed get user() {
+		return this.store.users.get(this.address)
 	}
 
 
@@ -62,7 +73,9 @@ export default class Session {
 					}
 				)
 				.subscribe(updateHandler)
-				.then(({ keyPair }) => this.signIn(passphrase, keyPair, onUpdate))
+				.then(({ keyPair }) => this.signIn(
+					keyPair, identity, passphrase, onUpdate
+				))
 				.then(() => {
 					this.clearTask("register")
 					resolve()
@@ -73,53 +86,8 @@ export default class Session {
 	}
 
 
-	// @action register(
-	// 		identity, passphrase,
-	// 		name, bio, picture, pictureExt,
-	// 		onUpdate
-	// 	) {
 
-	// 	// Set Status
-	// 	this.tasks["register"] = "pending"
-
-	// 	// Build updater
-	// 	let updateHandler = status => {
-	// 		this.tasks["register"] = status
-	// 		if (onUpdate) { onUpdate(status) }
-	// 	}
-
-	// 	return new Promise((resolve, reject) => {
-	// 		this.store.api
-	// 			.task(
-	// 				"create user",
-	// 				{
-	// 					identity: identity,
-	// 					passphrase: passphrase,
-	// 					name: name,
-	// 					bio: bio,
-	// 					picture: picture,
-	// 					ext: pictureExt
-	// 				}
-	// 			)
-	// 			.subscribe(updateHandler)
-	// 			.then(() => {
-
-	// 				// Update status
-	// 				delete this.tasks["register"]
-
-	// 				// Sign-in user
-	// 				return this.signIn(identity, passphrase, onUpdate)
-
-	// 			})
-	// 			.then(resolve)
-	// 			.catch(reject)
-	// 	})
-
-	// }
-
-
-
-	signIn(keyPair, passphrase, onUpdate) {
+	signIn(keyPair, identity, passphrase, onUpdate) {
 
 		// Set status
 		this.setTask("sign in", "pending")
@@ -134,21 +102,25 @@ export default class Session {
 		return new Promise((resolve, reject) => {
 			this.store.api
 				.task(
-					"sign in",
+					keyPair ? "key in" : "sign in",
 					{
 						keyPair: keyPair,
+						identity: identity,
 						passphrase: passphrase
 					}
 				)
 				.subscribe(updateHandler)
 				.then(result => {
 					if (result.error) {
+						console.error(error)
 						reject(error)
 					} else {
 						this.clearTask("sign in")
 						return this.authenticate(
 							result.address,
-							result.keyPair
+							result.keyPair,
+							identity,
+							passphrase
 						)
 					}
 				})
@@ -159,40 +131,21 @@ export default class Session {
 	}
 
 
-	// @action signIn(passphrase, onUpdate) {
+	signOut(onUpdate) {
+		return new Promise((resolve, reject) => {
+			this.store.api
+				.task("sign out")
+				.subscribe(onUpdate)
+				.then(() => {
+					this.deauthenticate()
+					resolve(this)
+				})
+				.catch(reject)
+		})
+	}
 
-	// 	// Set status
-	// 	this.tasks["sign in"] = "pending"
 
-	// 	// Build updater
-	// 	let updateHandler = status => {
-	// 		this.tasks["sign in"] = status
-	// 		if (onUpdate) { onUpdate(status) }
-	// 	}
-
-	// 	// Sign in
-	// 	return new Promise((resolve, reject) => {
-	// 		this.store.api
-	// 			.task("sign in", { passphrase: passphrase })
-	// 			.subscribe(updateHandler)
-	// 			.then(result => {
-	// 				if (result.error) {
-	// 					reject(error)
-	// 				} else {
-	// 					delete this.tasks["sign in"]
-	// 					return this.authenticate(
-	// 						result.address,
-	// 						result.keypair
-	// 					)
-	// 				}
-	// 			})
-	// 			.then(() => resolve(this))
-	// 			.catch(reject)
-	// 	})
-
-	// }
-
-	@action authenticate(address, keypair) {
+	@action authenticate(address, keyPair, identity, passphrase) {
 		this.address = address
 		this.authenticated = true
 		return Promise.all([
@@ -204,7 +157,8 @@ export default class Session {
 			this.getFeed(),
 
 			// Update keychain
-			this.store.addAccount(this.address, keypair),
+			this.store.addAccount(this.address, keyPair,
+								  identity, passphrase),
 
 			// Update auto-sign-in
 			this.store.setAccount(this.address)
@@ -213,33 +167,37 @@ export default class Session {
 	}
 
 
-
-	@action signOut(onUpdate) {
-		return new Promise((resolve, reject) => {
-			this.store.api
-				.task("sign out")
-				.subscribe(onUpdate)
-				.then(() => {
-					this.authenticated = false
-					this.address = undefined
-					resolve(this)
-				})
-				.catch(reject)
-		})
+	@action deauthenticate() {
+		this.address = undefined
+		this.authenticated = false
 	}
 
 
 
 	updateProfile(profile, onUpdate) {
 		return new Promise((resolve, reject) => {
-			this.store.api
-				.task("update profile", profile)
+
+			// Build profile payload
+			const payload = {
+				...profile,
+				pictureType: profile.picture? "png" : undefined
+			}
+
+			// Create update task
+			return this.store.api
+				.task("update profile", payload)
 				.subscribe(onUpdate)
 				.then(resolve)
 				.catch(reject)
+
 		})
 	}
 
+
+
+	@action addAlert(alert) {
+		this.alerts.push(alert)
+	}
 
 
 	getFeed() {

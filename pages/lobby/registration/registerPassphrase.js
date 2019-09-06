@@ -1,8 +1,9 @@
 import React from 'react';
-import Component from '../../../utils/component';
+import Page from '../../../utils/page';
 import { Text, View, TextInput } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
+import settings from '../../../settings';
 import styles from '../../../styles/styles';
 
 import Button from '../../../components/button';
@@ -13,7 +14,7 @@ import RegisterWrapper from './registerWrapper';
 
 @inject("store")
 @observer
-class RegisterPassphrase extends Component {
+class RegisterPassphrase extends Page {
 
 	constructor() {
 		super()
@@ -41,11 +42,10 @@ class RegisterPassphrase extends Component {
 
 
 
-	componentDidMount() {
-		const passphrase = this.props.navigation.getParam("passphrase")
-		if (passphrase) {
+	pageWillFocus(params) {
+		if (params.passphrase) {
 			this.updateState(
-				state => state.set("value", passphrase),
+				state => state.set("value", params.passphrase),
 				this.validate
 			)
 		}
@@ -92,8 +92,8 @@ class RegisterPassphrase extends Component {
 					() => {
 
 						// Get id
-						let passphrase = this.getState("value")
-						let confirm = this.getState("confirm")
+						let passphrase = this.state.value
+						let confirm = this.state.confirm
 
 						// Ignore empty IDs
 						if (passphrase.length === 0 && !forced) {
@@ -191,12 +191,18 @@ class RegisterPassphrase extends Component {
 			keyboard={true}
 			navigation={this.props.navigation}>
 
-			<Button
-				style={styles.lobby.showButton}
-				onPress={this.toggleShow}
-				label={this.state.show ? "hide" : "show"}
-				labelStyle={styles.lobby.showButtonText}
-			/>
+			<View style={[
+					styles.containerRow,
+					{ justifyContent: "flex-end" }
+				]}>
+				<Button
+					style={styles.lobby.showAbove}
+					onPress={this.toggleShow}
+					color="transparent"
+					label={this.state.show ? "hide" : "show"}
+					labelStyle={styles.lobby.showButtonText}
+				/>
+			</View>
 
 			<TextInput
 
@@ -207,6 +213,7 @@ class RegisterPassphrase extends Component {
 				autoFocus={true}
 				secureTextEntry={!this.state.show}
 				autoCapitalize="none"
+				autoCorrect={false}
 				
 				onChangeText={this.typePassphrase}
 				value={this.state.value}
@@ -225,6 +232,7 @@ class RegisterPassphrase extends Component {
 				style={styles.input.oneLine}
 				secureTextEntry={!this.state.show}
 				autoCapitalize="none"
+				autoCorrect={false}
 				
 				onChangeText={this.typeConfirm}
 				value={this.state.confirm}
@@ -238,7 +246,9 @@ class RegisterPassphrase extends Component {
 			<View style={styles.input.caption}>
 				{
 					this.state.validating ?
-						<Text>{" "}</Text>
+						<Text style={styles.text.white}>
+							{" "}
+						</Text>
 					:
 					this.state.error ?
 						<Text style={styles.text.error}>

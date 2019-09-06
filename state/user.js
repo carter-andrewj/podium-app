@@ -5,9 +5,13 @@ import Loadable from './loadable';
 
 class UserProfile extends Loadable {
 	fetch(update) {
-		return this.store.api
-			.task("load profile", { address: this.address })
-			.subscribe(update)
+		return new Promise((resolve, reject) => {
+			this.store.api
+				.task("load profile", { address: this.address })
+				.subscribe(update)
+				.then(({ profile }) => resolve(profile))
+				.catch(reject)
+		})
 	}
 }
 
@@ -70,7 +74,7 @@ class UserIntegrity extends Loadable {
 class UserRights extends Loadable {
 	fetch(update) {
 		return this.store.api
-			.task("load rights", { address: this.address })
+			.task("index rights", { address: this.address })
 			.subscribe(update)
 	}
 }
@@ -78,7 +82,7 @@ class UserRights extends Loadable {
 class UserSanctions extends Loadable {
 	fetch(update) {
 		return this.store.api
-			.task("load sanctions", { address: this.address })
+			.task("index sanctions", { address: this.address })
 			.subscribe(update)
 	}
 }
@@ -101,8 +105,9 @@ export default class User {
 		this.load = this.load.bind(this)
 
 		this.profile = new UserProfile(this)
-			.surface("identity", "name", "bio", "picture", "created")
-
+		this.profile.surface("id", "name", "bio",
+			"picture", "pictureType", "created")
+		
 		this.postIndex = new UserPosts(this)
 		this.topicIndex = new UserTopics(this)
 
@@ -119,11 +124,14 @@ export default class User {
 	}
 
 
-	@computed get identity() { return this.profile.identity }
+	@computed get identity() { return this.profile.id }
 	@computed get name() { return this.profile.name }
 	@computed get bio() { return this.profile.bio }
-	@computed get picture() { return this.profile.picture }
 	@computed get created() { return this.profile.created }
+	@computed get picture() { return {
+		uri: `${this.store.config.media.source}/` +
+			`${this.profile.picture}.${this.profile.pictureType}`
+	}}
 
 	@computed get posts() { return this.postIndex.value }
 	@computed get topics() { return this.topicIndex.value }

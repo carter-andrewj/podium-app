@@ -1,5 +1,5 @@
 import React from 'react';
-import Component from '../../../utils/component';
+import Page from '../../../utils/page';
 import { Text, View, TextInput } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
@@ -11,7 +11,7 @@ import RegisterWrapper from './registerWrapper';
 
 @inject("store")
 @observer
-class RegisterBio extends Component {
+class RegisterBio extends Page {
 
 	constructor() {
 		super()
@@ -32,10 +32,11 @@ class RegisterBio extends Component {
 	}
 
 
-	componentDidMount() {
-		if (this.props.store.newProfile.bio) {
-			this.updateState(state => state
-				.set("value", this.props.store.newProfile.bio)
+	pageWillFocus(params) {
+		if (params.bio) {
+			this.updateState(
+				state => state.set("value", params.bio),
+				this.validate
 			)
 		}
 	}
@@ -61,7 +62,7 @@ class RegisterBio extends Component {
 			} else {
 
 				// Get name
-				let bio = this.getState("value")
+				let bio = this.state.value
 
 				this.timer = setTimeout(
 					() => {
@@ -105,12 +106,36 @@ class RegisterBio extends Component {
 		this.validate(true)
 			.then(valid => {
 				if (valid) {
-					this.props.store.newProfile
-						.setBio(this.state.value)
-						.then(() => this.props.navigation.navigate(
-							"Picture"
-						))
-						.catch(console.error)
+
+					// Unpack params
+					const params = this.props.navigation.state.params
+
+					// Set profile data
+					let task = new Promise((resolve, reject) => {
+						params.task.promise
+							.then(() => this.props.store.session
+								.updateProfile({
+									name: params.name,
+									bio: this.state.value,
+									picture: params.picture
+								})
+							)
+							.then(resolve)
+							.catch(reject)
+					})
+
+					// Navigate to welcome screen
+					this.props.navigation.navigate(
+						"Welcome",
+						{
+							...this.props.navigation.state.params,
+							task: {
+								promise: task,
+								message: "Saving Profile"
+							}
+						}
+					)
+
 				}
 			})
 			.catch(console.error)
@@ -123,24 +148,32 @@ class RegisterBio extends Component {
 
 	render() {
 
-		return <RegisterWrapper skip={this.submit} keyboard={true}>
+		return <RegisterWrapper
+			action={this.submit}
+			actionIcon={this.state.value.length > 0 ?
+				"arrow-right"
+				: null
+			}
+			actionLabel="skip"
+			keyboard={true}
+			navigation={this.props.navigation}>
+
+			<View style={styles.spacer} />
 
 			<TextInput
 
 				ref={ref => { this.input = ref }}
 
-				style={styles.input.oneLine}
+				style={styles.lobby.bioBox}
 				autoFocus={true}
 				autoCapitalize="sentences"
+				multiline={true}
 				
 				onChangeText={this.type}
 				value={this.state.value}
-				placeholder="bio"
+				placeholder="I am the..."
 
-				onBlur={this.input.focus}
-
-				returnKeyType="next"
-				onSubmitEditing={this.submit}
+				returnKeyType="none"
 				
 			/>
 
@@ -153,7 +186,7 @@ class RegisterBio extends Component {
 					:
 					this.state.value.length > 0 ?
 						<Text style={styles.text.white}>
-							{" "}
+							really? how fascinating
 						</Text>
 					:
 					<Text style={styles.text.white}>

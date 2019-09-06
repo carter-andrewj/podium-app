@@ -12,6 +12,8 @@ export default class PostStore {
 
 		this.add = this.add.bind(this)
 
+		this.get = this.get.bind(this)
+
 	}
 
 	@action add(address) {
@@ -24,6 +26,10 @@ export default class PostStore {
 		this.index.set(address, new Post(this.store, address))
 		return this.index.get(address)
 
+	}
+
+	get(address) {
+		return this.index.get(address)
 	}
 
 }

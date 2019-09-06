@@ -14,7 +14,7 @@ const input = StyleSheet.create({
 		backgroundColor: settings.colors.white,
 		color: settings.colors.black,
 		fontFamily: "Varela",
-		fontSize: settings.fontsize.large,
+		fontSize: settings.fontsize.largish,
 		textAlign: "center",
 		margin: 0.05 * Dimensions.get("window").width,
 		marginBottom: 0.025 * Dimensions.get("window").width,
@@ -29,9 +29,11 @@ const input = StyleSheet.create({
 		backgroundColor: settings.colors.white,
 		color: settings.colors.black,
 		fontFamily: "Varela",
-		fontSize: settings.fontsize.large,
-		textAlign: "center",
-		margin: 3
+		fontSize: settings.fontsize.normal,
+		textAlign: "left",
+		margin: 0.05 * Dimensions.get("window").width,
+		marginBottom: 0.025 * Dimensions.get("window").width,
+		marginTop: 0.025 * Dimensions.get("window").width,
 	},
 
 	caption: {
