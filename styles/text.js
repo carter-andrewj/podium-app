@@ -10,7 +10,7 @@ const body = {
 	color: settings.colors.black,
 	textAlign: "left",
 	padding: 0,
-	backgroundColor: "transparent"
+	margin: 0,
 }
 
 const title = {
@@ -18,8 +18,8 @@ const title = {
 	fontSize: settings.fontsize.largish,
 	color: settings.colors.major,
 	textAlign: "center",
-	paddingBottom: 0.02 * Dimensions.get("window").height,
-	backgroundColor: "transparent"
+	padding: 0,
+	margin: 0,
 }
 
 const caption = {
@@ -58,8 +58,8 @@ const text = StyleSheet.create({
 		...caption,
 		color: settings.colors.white,
 		backgroundColor: settings.colors.bad,
-		paddingLeft: 0.008 * Dimensions.get("window").height,
-		paddingRight: 0.008 * Dimensions.get("window").height,
+		paddingLeft: Math.round(0.5 * settings.fontsize.smallish),
+		paddingRight: Math.round(0.5 * settings.fontsize.smallish),
 	},
 
 	success: {
@@ -94,14 +94,13 @@ const text = StyleSheet.create({
 		color: settings.colors.white,
 		fontSize: settings.fontsize.tiny,
 		fontFamily: "Avenir",
-		fontWeight: "bold"
 	},
 
 	title: title,
 
 	heading: {
 		...title,
-		paddingBottom: 0.015 * Dimensions.get("window").height,
+		paddingBottom: Math.round(0.015 * Dimensions.get("window").height),
 	},
 
 	subtitle: {

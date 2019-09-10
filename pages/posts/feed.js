@@ -4,6 +4,7 @@ import { Dimensions, FlatList, Text, View } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
 import globals from '../../globals';
+import settings from '../../settings';
 import styles from '../../styles/styles';
 
 import Post from './post';
@@ -153,12 +154,16 @@ class Feed extends Page {
 		/>
 	}
 
-	lockScroll() {
-		globals.screenLock = "feed"
+	lockScroll(event) {
+		if (!globals.screenLock) {
+			globals.screenLock = "feed"
+		}
 	}
 
 	unlockScroll() {
-		globals.screenLock = false
+		if (globals.screenLock === "feed") {
+			globals.screenLock = false
+		}
 	}
 
 
@@ -167,7 +172,9 @@ class Feed extends Page {
 			<FlatList
 
 				ref={this.feed}
+
 				contentContainerStyle={styles.feed.list}
+				endFillColor={settings.colors.neutral}
 
 				ListHeaderComponent={this.header}
 				ListFooterComponent={this.footer}
@@ -184,9 +191,18 @@ class Feed extends Page {
 					globals.screenLock === "feed"}
 				onScrollBeginDrag={this.lockScroll}
 				onScrollEndDrag={this.unlockScroll}
+				scrollsToTop={false}
 
 				onEndReached={this.loadThreads}
 				onEndReachedThreshold={1.0}
+
+				maintainVisibleContentPosition={{
+					minIndexForVisible: 0,
+				}}
+				directionalLockEnabled={true}
+
+				keyboardShouldPersistTaps="handled"
+				keyboardDismissMode="on-drag"
 
 			/>
 		</View>

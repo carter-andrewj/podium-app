@@ -5,6 +5,14 @@ import general from './general';
 import text from './text';
 
 
+const layout = settings.layout
+
+const screenHeight = Dimensions.get("window").height
+const screenWidth = Dimensions.get("window").width
+
+const buttonSize = Math.round(layout.button * screenWidth)
+
+
 
 
 const button = StyleSheet.create({
@@ -36,9 +44,38 @@ const button = StyleSheet.create({
 		...text.title,
 		textAlign: "left",
 		fontSize: settings.fontsize.smaller,
-		fontWeight: 600,
 		color: settings.colors.major,
 		paddingBottom: 0
+	},
+
+
+
+	followButton: {
+		...general.container,
+		minWidth: buttonSize - 2.0,
+		maxWidth: buttonSize - 2.0,
+		minHeight: buttonSize - 2.0,
+		maxHeight: buttonSize - 2.0,
+		borderWidth: 1.0,
+	},
+
+	followLoading: {
+		backgroundColor: settings.colors.neutral,
+		borderColor: settings.colors.neutral,
+	},
+
+	followOn: {
+		backgroundColor: settings.colors.major,
+		borderColor: settings.colors.major,
+	},
+
+	followOff: {
+		backgroundColor: settings.colors.white,
+		borderColor: settings.colors.major,
+	},
+
+	followIcon: {
+		
 	}
 
 })

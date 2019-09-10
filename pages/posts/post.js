@@ -22,9 +22,8 @@ class Post extends Component {
 
 		super()
 
-		this.span = Dimensions.get("window").width *
-			((1.0 - settings.layout.postWingOverlap) -
-				settings.layout.postMargin)
+		this.span = Math.round(Dimensions.get("window").width *
+			(1.0 - settings.layout.postWingOverlap))
 		this.location = 0
 		this.pan = new Animated.ValueXY()
 		this.height = null

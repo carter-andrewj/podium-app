@@ -1,6 +1,6 @@
 import React from 'react';
 import Component from '../../utils/component';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
 import settings from '../../settings';
@@ -15,7 +15,13 @@ class QuickProfile extends Component {
 
 	constructor() {
 		super()
+		this.state = {
+			height: styles.quickProfile.container.minHeight,
+			bio: null,
+			scroll: false
+		}
 		this.navigate = this.navigate.bind(this)
+		this.setHeight = this.setHeight.bind(this)
 	}
 
 	navigate(destination) {
@@ -25,42 +31,103 @@ class QuickProfile extends Component {
 		)
 	}
 
+	setHeight({ nativeEvent }) {
+
+		// Get element dimensions
+		const height = nativeEvent.layout.height
+		const margin = styles.quickProfile.body.marginTop * 2.0
+		const header = styles.quickProfile.header.minHeight
+		const footer = styles.quickProfile.footer.minHeight
+
+		// Get element limits
+		const min = styles.quickProfile.container.minHeight
+		const max = styles.quickProfile.container.maxHeight
+
+		// Calculate height to display bio unclipped
+		// (Note, textboxes hide any line within 5 pixels
+		//  of the bottom edge, hence the +5 below).
+		const content = height + header + footer + (2.0 * margin) + 7
+
+		// Calculate container height
+		const full = Math.min(max, Math.max(min, content))
+
+		// Set height
+		if (full !== this.state.height) {
+			this.updateState(state => state
+				.set("height", full)
+				.set("bio", height + 5)
+				.set("scroll", full === max)
+			)
+		}
+
+	}
+
+	
+
+
 	render() {
 		const profile = this.props.store.session.user
-		return <View style={styles.profile.quickContainer}>
+		return <View style={[
+				styles.quickProfile.container,
+				{
+					minHeight: this.state.height,
+					maxHeight: this.state.height
+				}
+			]}>
 			
 			{profile ?
-				<TouchableOpacity onPress={() => this.navigate("Profile")}>
-					<View style={styles.profile.quickProfile}>
+				<TouchableOpacity
+					style={styles.quickProfile.profile}
+					onPress={() => this.navigate("Profile")}>
+					<View style={styles.quickProfile.profile}>
 
-						<View style={styles.profile.quickContainerLeft}>
-							<View style={styles.profile.quickPictureHolder}>
+						<View style={styles.quickProfile.left}>
+							<View style={styles.quickProfile.pictureHolder}>
 								<Image
-									style={styles.profile.quickPicture}
+									style={styles.quickProfile.picture}
 									source={profile.picture}
 								/>
 							</View>
 						</View>
 
-						<View style={styles.profile.quickContainerRight}>
+						<View style={styles.quickProfile.right}>
 
-							<View style={styles.profile.quickHeader}>
-								<Text>
-									<Text style={styles.profile.quickName}>
-										{profile.name}
-									</Text>
-									{" "}
-									<Text style={styles.profile.quickIdentity}>
-										{`@${profile.identity}`}
-									</Text>
+							<View style={styles.quickProfile.header}>
+								<Text style={styles.profile.name}>
+									{profile.name}
+								</Text>
+								<Text style={styles.profile.identity}>
+									{profile.identity}
 								</Text>
 							</View>
 
-							<View style={styles.profile.quickBody}>
-								<Text style={styles.profile.quickBio}>
+							<ScrollView
+								scrollEnabled={this.state.scroll}
+								contentContainerStyle={[
+									styles.quickProfile.body,
+									this.state.bio ?
+										{
+											minHeight: this.state.bio,
+											maxHeight: this.state.bio
+										}
+										: null
+								]}>
+								<Text
+									onStartShouldSetResponder={
+										this.state.scroll ?
+											() => true
+											: null
+									}
+									style={styles.quickProfile.bio}>
 									{profile.bio}
 								</Text>
-							</View>
+								<Text
+									onLayout={this.setHeight}
+									pointerEvents="none"
+									style={styles.quickProfile.dummy}>
+									{profile.bio}
+								</Text>
+							</ScrollView>
 
 						</View>
 					</View>
@@ -68,7 +135,7 @@ class QuickProfile extends Component {
 				: null
 			}
 
-			<View style={styles.profile.quickLinks}>
+		<View style={styles.quickProfile.footer}>
 
 				<Button
 					onPress={() => this.navigate("Wallet")}
@@ -113,6 +180,7 @@ class QuickProfile extends Component {
 				/>
 
 			</View>
+
 
 		</View>
 	}

@@ -41,57 +41,104 @@ class QuickAlerts extends Component {
 
 		this.list = null
 
+		this.lockScroll = this.lockScroll.bind(this)
+		this.unlockScroll = this.unlockScroll.bind(this)
+		this.scrollToTop = this.scrollToTop.bind(this)
+
 		this.filterAlerts = this.filterAlerts.bind(this)
+
 		this.quickAlert = this.quickAlert.bind(this)
 		this.emptyAlerts = this.emptyAlerts.bind(this)
 
-		this.lockScroll = this.lockScroll.bind(this)
-		this.unlockScroll = this.unlockScroll.bind(this)
-
 	}
+
+
+
+	// componentWillMount() {
+
+	// 	this.props.store.session.addAlert({
+	// 		type: "reply",
+	// 		user: "Test User 1",
+	// 		post: "alert-post-address-1"
+	// 	})
+	// 	this.props.store.session.addAlert({
+	// 		type: "promote",
+	// 		user: "Test User 2",
+	// 		post: "alert-post-address-2",
+	// 		value: 12,
+	// 		currency: "PDM"
+	// 	})
+	// 	this.props.store.session.addAlert({
+	// 		type: "mention",
+	// 		user: "Test User 3",
+	// 		post: "alert-post-address-3"
+	// 	})
+	// 	this.props.store.session.addAlert({
+	// 		type: "jury",
+	// 		verdict: "jury-verdict-1",
+	// 	})
+	// 	this.props.store.session.addAlert({
+	// 		type: "sanction",
+	// 		rule: "2.1.3",
+	// 		verdict: "jury-verdict-2",
+	// 	})
+	// 	this.props.store.session.addAlert({
+	// 		type: "follow",
+	// 		user: "Test User 4",
+	// 	})
+	// }
+
+
 
 	componentDidMount() {
-		this.props.store.session.addAlert({
-			type: "reply",
-			user: "Test User 1",
-			post: "alert-post-address-1"
+
+		this.props.controller({
+			filter: this.filterAlerts,
+			resetScroll: this.scrollToTop
 		})
-		this.props.store.session.addAlert({
-			type: "promote",
-			user: "Test User 2",
-			post: "alert-post-address-2",
-			value: 12,
-			currency: "PDM"
-		})
-		this.props.store.session.addAlert({
-			type: "mention",
-			user: "Test User 3",
-			post: "alert-post-address-3"
-		})
-		this.props.store.session.addAlert({
-			type: "jury",
-			verdict: "jury-verdict-1",
-		})
-		this.props.store.session.addAlert({
-			type: "sanction",
-			rule: "2.1.3",
-			verdict: "jury-verdict-2",
-		})
-		this.props.store.session.addAlert({
-			type: "follow",
-			user: "Test User 4",
+
+	}
+
+
+
+// SCROLL MANAGERS
+
+	lockScroll() {
+		if (!globals.screenLock) {
+			globals.screenLock = "quick-alerts"
+		}
+	}
+
+	unlockScroll() {
+		if (globals.screenLock === "quick-alerts") {
+			globals.screenLock = false
+		}
+	}
+
+	scrollToTop() {
+		this.list.scrollToOffset({
+			animated: false,
+			offset: 0
 		})
 	}
 
+
+
+
+// FILTER
 
 	filterAlerts(filter) {
 		this.updateState(state => state
 			.set("filter", filter)
 			.set("filterSet", filters[filter])
 			.set("filterTitle", filter === "all" ? "alerts" : filter)
-			
 		)
 	}
+
+
+
+
+// COMPONENTS
 
 	quickAlert({ index, item }) {
 
@@ -105,7 +152,7 @@ class QuickAlerts extends Component {
 
 			// Handle alerts for replies
 			case "reply":
-				message = <Text style={styles.alerts.quickAlertText}>
+				message = <Text style={styles.quickAlerts.messageText}>
 					<Text style={styles.text.user}>
 						{alert.user}
 					</Text>
@@ -119,7 +166,7 @@ class QuickAlerts extends Component {
 
 			// Handle alerts for replies
 			case "mention":
-				message = <Text style={styles.alerts.quickAlertText}>
+				message = <Text style={styles.quickAlerts.messageText}>
 					<Text style={styles.text.user}>
 						{alert.user}
 					</Text>
@@ -133,7 +180,7 @@ class QuickAlerts extends Component {
 
 			// Handle alerts for promotions
 			case "promote":
-				message = <Text style={styles.alerts.quickAlertText}>
+				message = <Text style={styles.quickAlerts.messageText}>
 					<Text style={styles.text.user}>
 						{alert.user}
 					</Text>
@@ -151,7 +198,7 @@ class QuickAlerts extends Component {
 
 			// Handle alerts for follows
 			case "follow":
-				message = <Text style={styles.alerts.quickAlertText}>
+				message = <Text style={styles.quickAlerts.messageText}>
 					<Text style={styles.text.user}>
 						{alert.user}
 					</Text>
@@ -165,7 +212,7 @@ class QuickAlerts extends Component {
 
 			// Handle alerts for Jury results
 			case "verdict":
-				message = <Text style={styles.alerts.quickAlertText}>
+				message = <Text style={styles.quickAlerts.messageText}>
 					your jury reached a verdict
 				</Text>
 				link = () => this.props.navigate(
@@ -176,7 +223,7 @@ class QuickAlerts extends Component {
 
 			// Handle alerts for Sanctions
 			case "sanction":
-				message = <Text style={styles.alerts.quickAlertText}>
+				message = <Text style={styles.quickAlerts.messageText}>
 					<Text>
 						you have been sanctioned for violating
 					</Text>
@@ -196,14 +243,14 @@ class QuickAlerts extends Component {
 
 		// Return 
 		return <TouchableOpacity key={`alert-${index}`}>
-			<View style={styles.alerts.quickAlert}>
-				<View style={styles.alerts.quickAlertPictureHolder}>
+			<View style={styles.quickAlerts.alert}>
+				<View style={styles.quickAlerts.pictureHolder}>
 					<Image
-						style={styles.alerts.quickAlertPicture}
+						style={styles.quickAlerts.picture}
 						source={require("../../assets/profile-placeholder.png")}
 					/>
 				</View>
-				<View style={styles.alerts.quickAlertMessage}>
+				<View style={styles.quickAlerts.message}>
 					{message}
 				</View>
 			</View>
@@ -213,40 +260,33 @@ class QuickAlerts extends Component {
 
 
 	emptyAlerts() {
-		return <View style={styles.alerts.quickEmpty}>
-			<Text style={styles.alerts.quickEmptyText}>
-
+		return <View style={styles.quickAlerts.empty}>
+			<Text style={styles.quickAlerts.emptyText}>
+				no alerts
 			</Text>
 		</View>
 	}
 
 
-	lockScroll() {
-		globals.screenLock = "quick-alerts"
-	}
-
-	unlockScroll() {
-		globals.screenLock = false
-	}
 
 
-
+// RENDER
 
 	render() {
 
 		const filter = this.state.filter
 
-		return 	<View style={styles.alerts.quickContainer}>
+		return 	<View style={styles.quickAlerts.container}>
 
-			<View style={styles.alerts.quickHeader}>
+			<View style={styles.quickAlerts.header}>
 
-				<View style={styles.alerts.quickTitle}>
-					<Text style={styles.alerts.quickTitleText}>
+				<View style={styles.quickAlerts.title}>
+					<Text style={styles.quickAlerts.titleText}>
 						{this.state.filterTitle}
 					</Text>
 				</View>
 
-				<View style={styles.alerts.quickFilter}>
+				<View style={styles.quickAlerts.filter}>
 
 					<Button
 						icon="bell"
@@ -307,11 +347,13 @@ class QuickAlerts extends Component {
 
 			</View>
 
-			<View style={styles.alerts.quickListContainer}>
+			<View style={styles.quickAlerts.listContainer}>
 				<FlatList
 
-					ref={this.list}
-					contentContainerStyle={styles.alerts.quickList}
+					ref={ref => this.list = ref}
+
+					contentContainerStyle={styles.quickAlerts.list}
+					endFillColor={settings.colors.neutral}
 
 					data={this.props.store.session.alerts
 						.map(toJS)
@@ -326,19 +368,21 @@ class QuickAlerts extends Component {
 						globals.screenLock === "quick-alerts"}
 					onScrollBeginDrag={this.lockScroll}
 					onScrollEndDrag={this.unlockScroll}
+					scrollsToTop={false}
 					
 					onEndReachedThreshold={1.0}
 					onEndReached={this.props.store.session.loadAlerts}
 					refreshing={this.state.loading}
 
-				/>
-			</View>
+					maintainVisibleContentPosition={{
+						minIndexForVisible: 0,
+						autoscrollToTopThreshold: 3
+					}}
+					directionalLockEnabled={true}
 
-			<View style={styles.alerts.quickFooter}>
-				<Button
-					label="see all"
-					onPress={() => this.props.navigate("Alerts")}
-					style={{ alignSelf: "flex-end" }}
+					keyboardShouldPersistTaps="handled"
+					keyboardDismissMode="on-drag"
+
 				/>
 			</View>
 

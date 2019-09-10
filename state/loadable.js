@@ -13,7 +13,6 @@ export default class Loadable {
 
 	constructor(context) {
 
-		// this.store = context.store
 		this.lifetime = context.store.config.records.reload
 		this.next = new Date().now - this.lifetime
 

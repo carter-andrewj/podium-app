@@ -4,50 +4,62 @@ import settings from '../settings';
 import general from './general';
 
 
+
+const layout = settings.layout
+
+const screenWidth = Dimensions.get("window").width
+const screenHeight = Dimensions.get("window").height
+
+const inputWidth = Math.round(0.9 * screenWidth)
+const inputHeight = Math.round(0.08 * screenHeight)
+const multilineHeight = Math.round(0.3 * screenHeight)
+
+const checkSize = Math.round(0.05 * screenWidth)
+
+const margin = Math.round(layout.margin * screenWidth)
+
+
+
 const input = StyleSheet.create({
 
 	oneLine: {
 		flex: 1,
-		width: 0.9 * Dimensions.get("window").width,
-		minHeight: 0.08 * Dimensions.get("window").height,
-		maxHeight: 0.08 * Dimensions.get("window").height,
+		width: inputWidth,
+		minHeight: inputHeight,
+		maxHeight: inputHeight,
 		backgroundColor: settings.colors.white,
 		color: settings.colors.black,
 		fontFamily: "Varela",
 		fontSize: settings.fontsize.largish,
 		textAlign: "center",
-		margin: 0.05 * Dimensions.get("window").width,
-		marginBottom: 0.025 * Dimensions.get("window").width,
-		marginTop: 0.025 * Dimensions.get("window").width,
+		margin: margin,
 	},
 
 	multiLine: {
 		flex: 1,
-		width: 0.9 * Dimensions.get("window").width,
-		minHeight: 0.3 * Dimensions.get("window").height,
-		maxHeight: 0.3 * Dimensions.get("window").height,
+		width: inputWidth,
+		minHeight: multilineHeight,
+		maxHeight: multilineHeight,
 		backgroundColor: settings.colors.white,
 		color: settings.colors.black,
 		fontFamily: "Varela",
 		fontSize: settings.fontsize.normal,
 		textAlign: "left",
-		margin: 0.05 * Dimensions.get("window").width,
-		marginBottom: 0.025 * Dimensions.get("window").width,
-		marginTop: 0.025 * Dimensions.get("window").width,
+		margin: margin,
 	},
 
 	caption: {
-		paddingBottom: 20
+		paddingBottom: settings.fontsize.normal
 	},
 
 	checkbox: {
 		...general.container,
-		minWidth: 0.05 * Dimensions.get("window").width,
-		maxWidth: 0.05 * Dimensions.get("window").width,
-		minHeight: 0.05 * Dimensions.get("window").width,
-		maxHeight: 0.05 * Dimensions.get("window").width,
+		minWidth: checkSize,
+		maxWidth: checkSize,
+		minHeight: checkSize,
+		maxHeight: checkSize,
 		backgroundColor: settings.colors.white,
-		borderRadius: 0.01 * Dimensions.get("window").width,
+		borderRadius: Math.round(0.1 * checkSize),
 	},
 
 	check: {

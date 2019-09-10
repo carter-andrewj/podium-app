@@ -30,11 +30,16 @@ export default class Session {
 		this.authenticate = this.authenticate.bind(this)
 		this.deauthenticate = this.deauthenticate.bind(this)
 
+		this.follow = this.follow.bind(this)
+		this.unfollow = this.unfollow.bind(this)
+
 		this.updateProfile = this.updateProfile.bind(this)
 
 		this.getFeed = this.getFeed.bind(this)
 
 	}
+
+
 
 	@computed get user() {
 		return this.store.users.get(this.address)
@@ -171,6 +176,30 @@ export default class Session {
 		this.address = undefined
 		this.authenticated = false
 	}
+
+
+
+	follow(address, onUpdate) {
+		return new Promise((resolve, reject) => {
+			this.store.api
+				.task("follow", { address: address})
+				.subscribe(onUpdate)
+				.then(resolve)
+				.catch(reject)
+		})
+	}
+
+
+	unfollow(address, onUpdate) {
+		return new Promise((resolve, reject) => {
+			this.store.api
+				.task("unfollow", { address: address})
+				.subscribe(onUpdate)
+				.then(resolve)
+				.catch(reject)
+		})
+	}
+
 
 
 

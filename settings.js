@@ -70,10 +70,14 @@ const settings = {
 
 	layout: {
 
-		drawerSize: 0.9,		// Width of left/right nav drawers (% of screen)
-		headerSize: 0.08,		// Height of navigation header (% of screen)
+		// Core layout
+		drawerSize: 0.9,		// Width of left/right nav drawers (% of screen width)
+		headerSize: 0.08,		// Height of navigation header (% of screen height)
+		footerSize: 0.06,		// Height of footers (% of screen height)
 		border: 2.0,			// Width of borders between layout segments (pixels)
+		margin: 0.02,			// Margin used on core nav components (% of screen width)
 
+		// Pan Responder
 		panStart: 5,			// Number of pixels moved before pan locks the screen
 		xLimit: 0.25,			// Scroll limit (% of screen width) before auto-pan moves to next stable point upon release
 		vLimit: 0.5,			// Velocity limit before auto-pan moves to next stable point upon release
@@ -81,23 +85,34 @@ const settings = {
 		overScroll: 0.7,		// Decay factor for pan when scrolling outside of screen bounds
 		deadZone: 10,			// Boundary on edges of pannable object where pan will be ignored (pixels)
 
-		corner: 0.3,			// Border radius of images with 1 corner rounded (% of width)
+		// General
+		corner: 0.38,			// Border radius of images with 1 corner rounded (% of image width)
+		button: 0.07,			// Size of standard square HUD button (% of screen width)
+		spinTime: 500,			// Spin duration for loading icon (ms)
 
-		postHeight: 0.17,		// Minimum height of a post (% of screen height)
-		postHeader: 0.05,		// Height of post header - name, @identity, etc.. (% of screen height)
+		// Quick Profile
+		quickProfile: 0.15,		// Minimum size of quick profile element in left drawer (% of screen height)
+		quickProfileCap: 0.4,	// Maximum size of quick profile element in left drawer (% of screen height)
+		quickProfileName: 0.06,	// Height of name element in quick profile (% of screen height)
+
+		// Quick Search
+		quickSearchIcon: 15,	// Size of icons in quicksearch input (pixels)
+
+		// Posts
+		postHeight: 0.15,		// Minimum height of a post (% of screen height)
+		postHeader: 0.03,		// Height of post header - name, @identity, etc.. (% of screen height)
 		postReactor: 0.3,		// Width of reactor element in post header (% of screen width)
-		postMargin: 0.02,		// Padding around edge of post (% of screen width)
-		postWing: 0.9,			// Width of post wings outside left/right side of screen (% of screen)
-		postWingOverlap: 0.18	// Overlap of post wings with post core content (% of screen)
+		postWing: 0.85,			// Width of post wings outside left/right side of screen (% of screen width)
+		postWingOverlap: 0.18	// Overlap of post wings with post core content (% of screen width)
 
 	},
 
 	regex: {
 
-		// Regex for matching a @, #, or \ tag
+		// Regex for matching @, #, or \ tags
 		tag: /[@#\/][a-z0-9_-]+[a-z0-9_-]*?(?=\W|$)/gi,
 
-		// Regex for matching a url
+		// Regex for matching urls
 		url: /(?:http[s]*:\/\/)?(?:www\.)?(?!ww*\.)[a-z][a-z0-9.\-/]*\.[a-z]{2}(?:[^\s]*[a-z0-9/]|(?=\W))/gi
 	
 	}

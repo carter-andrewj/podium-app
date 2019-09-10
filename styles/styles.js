@@ -11,11 +11,15 @@ import splash from './splash';
 import lobby from './lobby';
 
 import alerts from './alerts';
+import quickAlerts from './quickAlerts';
+
+import quickSearch from './quickSearch';
 
 import feed from './feed';
 import post from './post';
 import newPost from './newPost';
 
+import quickProfile from './quickProfile';
 import profile from './profile';
 import wallet from './wallet';
 
@@ -37,11 +41,15 @@ const styles = {
 	lobby: { ...lobby },
 
 	alerts: { ...alerts },
+	quickAlerts: quickAlerts,
+
+	quickSearch: quickSearch,
 
 	feed: { ...feed },
 	post: { ...post },
 	newPost: { ...newPost },
 
+	quickProfile: quickProfile,
 	profile: { ...profile },
 	wallet: { ...wallet },
 

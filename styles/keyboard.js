@@ -4,47 +4,61 @@ import settings from '../settings';
 import general from './general';
 
 
+const screenWidth = Dimensions.get("window").width
+const screenHeight = Dimensions.get("window").height
+
+const keyboardHeight = 0.675
+const autocompleteHeight = 0.08
+
+const heightAbove = Math.round(keyboardHeight * screenHeight)
+const heightBelow = Math.round((1.0 - keyboardHeight) * screenHeight)
+
+const headerSize = Math.round(screenHeight * settings.layout.headerSize)
+const autocompleteSize = Math.round(autocompleteHeight * screenHeight)
+
+
+
 const keyboard = StyleSheet.create({
 
 	above: {
 		...general.container,
-		minHeight: 0.64 * Dimensions.get("window").height,
-		maxHeight: 0.64 * Dimensions.get("window").height,
-		paddingTop: 0.1 * Dimensions.get("window").height,
+		minHeight: heightAbove,
+		maxHeight: heightAbove,
 	},
 
 	aboveWithHeader: {
 		...general.container,
-		minHeight: (0.64 - settings.layout.headerSize) *
-			Dimensions.get("window").height,
-		maxHeight: (0.64 - settings.layout.headerSize) *
-			Dimensions.get("window").height,
+		minHeight: heightAbove - headerSize,
+		maxHeight: heightAbove - headerSize,
 	},
 
 	aboveWithHeaderWithAuto: {
 		...general.container,
-		minHeight: (0.6 - settings.layout.headerSize) *
-			Dimensions.get("window").height,
-		maxHeight: (0.6 - settings.layout.headerSize) *
-			Dimensions.get("window").height,
+		minHeight: heightAbove - headerSize - autocompleteSize,
+		maxHeight: heightAbove - headerSize - autocompleteSize,
 	},
 
 	below: {
 		...general.container,
-		minHeight: 0.36 * Dimensions.get("window").height,
-		maxHeight: 0.36 * Dimensions.get("window").height,
+		minHeight: heightBelow,
+		maxHeight: heightBelow,
 	},
 
 	belowWithAuto: {
 		...general.container,
-		minHeight: 0.4 * Dimensions.get("window").height,
-		maxHeight: 0.4 * Dimensions.get("window").height,
+		minHeight: heightBelow + autocompleteSize,
+		maxHeight: heightBelow + autocompleteSize,
 	},
 
 	floatAbove: {
 		position: "absolute",
-		bottom: 0.36 * Dimensions.get("window").height
-	}
+		bottom: heightBelow
+	},
+
+	floatAboveWithAuto: {
+		position: "absolute",
+		bottom: heightBelow + autocompleteSize,
+	},
 
 
 });

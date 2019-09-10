@@ -5,6 +5,17 @@ import general from './general';
 import text from './text';
 
 
+
+const layout = settings.layout
+
+const screenWidth = Dimensions.get("window").width
+const screenHeight = Dimensions.get("window").height
+
+const footerSize = Math.round(screenHeight * layout.footerSize)
+
+const margin = Math.round(screenWidth * layout.margin)
+
+
 const inputText = {
 	fontFamily: "Varela",
 	fontSize: settings.fontsize.small,
@@ -19,8 +30,7 @@ const inputContainer = {
 	right: 0,
 	top: 0,
 	bottom: 0,
-	padding: Dimensions.get("window").width *
-		settings.layout.postMargin,
+	padding: margin,
 }
 
 
@@ -31,8 +41,7 @@ const newPost = StyleSheet.create({
 		alignItems: "stretch",
 		alignSelf: "flex-start",
 		backgroundColor: settings.colors.white,
-		paddingTop: Dimensions.get("window").width *
-			settings.layout.postMargin,
+		paddingTop: margin,
 	},
 
 	content: {
@@ -81,16 +90,14 @@ const newPost = StyleSheet.create({
 	},
 
 	sendButton: {
-		margin: 0.02 * Dimensions.get("window").width,
-		marginLeft: 0.05 * Dimensions.get("window").width,
-		marginRight: 0.05 * Dimensions.get("window").width,
+		margin: margin,
 	},
 
 	footer: {
 		...general.container,
 		alignSelf: "flex-end",
-		minHeight: 0.06 * Dimensions.get("window").height,
-		maxHeight: 0.06 * Dimensions.get("window").height,
+		minHeight: footerSize,
+		maxHeight: footerSize,
 		borderTopWidth: 1,
 		borderTopColor: settings.colors.neutralPale
 	}

@@ -114,9 +114,9 @@ const lobby = StyleSheet.create({
 		minHeight: 0.7 * Dimensions.get("window").width,
 		maxHeight: 0.7 * Dimensions.get("window").width,
 		margin: 0.04 * Dimensions.get("window").width,
-		borderTopLeftRaidus: 0.01 * Dimensions.get("window").width,
-		borderTopRightRaidus: 0.01 * Dimensions.get("window").width,
-		borderBottomLeftRaidus: 0.01 * Dimensions.get("window").width,
+		borderTopLeftRadius: 0.01 * Dimensions.get("window").width,
+		borderTopRightRadius: 0.01 * Dimensions.get("window").width,
+		borderBottomLeftRadius: 0.01 * Dimensions.get("window").width,
 		borderBottomRightRadius: 0.2 * Dimensions.get("window").width,
 		backgroundColor: settings.colors.white
 	},

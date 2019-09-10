@@ -12,7 +12,7 @@ const container = {
 	backgroundColor: "transparent",
 	alignItems: 'center',
 	justifyContent: 'center',
-	alignConten: "center",
+	alignContent: "center",
 	margin: 0,
 	padding: 0,
 }
@@ -53,29 +53,34 @@ const general = StyleSheet.create({
 		flexGrow: 2,
 	},
 
-	keyboardSpacer: {
-		...container,
-		minHeight: Dimensions.get("window").height * 0.35
-	},
+	// keyboardSpacer: {
+	// 	...container,
+	// 	minHeight: Dimensions.get("window").height * 0.35
+	// },
 
 	containerRow: {
 		...container,
 		flex: 1,
 		flexDirection: "row",
-		width: 0.9 * Dimensions.get("window").width,
 		justifyContent: "space-between",
 	},
 
-	shadow: {
-		shadowRadius: 100,
-		shadowColor: settings.colors.neutralDarkest
+	flatList: {
+		...container,
+		flexGrow: 1,
+		justifyContent: "flex-start",
 	},
 
-	transparent: {
-		opacity: 0.0
-	},
+	// shadow: {
+	// 	shadowRadius: 100,
+	// 	shadowColor: settings.colors.neutralDarkest
+	// },
 
-	card: card,
+	// transparent: {
+	// 	opacity: 0.0
+	// },
+
+	// card: card,
 
 });
 

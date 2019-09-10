@@ -62,4 +62,14 @@ export default class API {
 	}
 
 
+	search(terms, onUpdate) {
+		return new Promise((resolve, reject) => {
+			this.task("search", terms)
+				.subscribe(onUpdate)
+				.then(({ results }) => resolve(results))
+				.catch(reject)
+		})
+	}
+
+
 }

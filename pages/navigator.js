@@ -43,6 +43,9 @@ const Navigator = createStackNavigator(
 				easing: Easing.step0,
 			},
 		}),
+		defaultNavigationOptions: {
+			gesturesEnabled: false
+		}
 	}
 
 )

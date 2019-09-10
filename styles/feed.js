@@ -5,37 +5,48 @@ import general from './general';
 import text from './text';
 
 
+const screenHeight = Dimensions.get("window").height
+const screenWidth = Dimensions.get("window").width
+
+
+const separator = Math.round(4.0 * settings.layout.border)
+
+const feedHeight = Math.round(screenHeight * (1.0 - settings.layout.headerSize))
+
+const headerHeight = Math.round(screenHeight * settings.layout.headerSize)
+
 
 
 const feed = StyleSheet.create({
 
 	container: {
 		...general.container,
+		backgroundColor: settings.colors.neutral
+	},
+
+	list: {
+		minWidth: screenWidth,
+		maxWidth: screenWidth,
 	},
 
 	separator: {
 		...general.container,
-		maxHeight: 3.0 * settings.layout.border,
-		minHeight: 3.0 * settings.layout.border,
-		backgroundColor: settings.colors.white,
-		borderTopWidth: settings.layout.border,
-		borderBottomWidth: settings.layout.border,
-		borderColor: settings.colors.neutralPalest
+		maxHeight: separator,
+		minHeight: separator,
+		backgroundColor: "transparent"
 	},
 
 	header: {
 		...general.containerRow,
-		minWidth: Dimensions.get("window").width,
-		height: settings.layout.headerSize *
-			Dimensions.get("window").height,
+		minWidth: screenWidth,
+		height: headerHeight,
 		backgroundColor: settings.colors.white,
 	},
 
 	footer: {
 		...general.containerRow,
-		minWidth: Dimensions.get("window").width,
-		height: settings.layout.headerSize *
-			Dimensions.get("window").height,
+		minWidth: screenWidth,
+		height: headerHeight,
 		backgroundColor: settings.colors.white,
 		borderTopWidth: settings.layout.border,
 		borderColor: settings.colors.neutralPalest
@@ -43,13 +54,11 @@ const feed = StyleSheet.create({
 
 	placeholder: {
 		...general.container,
-		minHeight: Dimensions.get("window").height *
-			(1.0 - settings.layout.headerSize),
-		maxHeight: Dimensions.get("window").height *
-			(1.0 - settings.layout.headerSize),
-		minWidth: Dimensions.get("window").width,
+		minHeight: feedHeight,
+		maxHeight: feedHeight,
+		minWidth: screenWidth,
 		backgroundColor: settings.colors.white,
-		paddingBottom: 0.15 * Dimensions.get("window").height
+		paddingBottom: headerHeight
 	},
 
 	placeholderText: {

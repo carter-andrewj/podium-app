@@ -1,4 +1,4 @@
-import { observable, computed, action } from "mobx";
+import { observable, computed, action, toJS } from "mobx";
 
 import Loadable from './loadable';
 
@@ -124,14 +124,20 @@ export default class User {
 	}
 
 
-	@computed get identity() { return this.profile.id }
+	@computed get identity() { return `@${this.profile.id}` }
 	@computed get name() { return this.profile.name }
 	@computed get bio() { return this.profile.bio }
 	@computed get created() { return this.profile.created }
-	@computed get picture() { return {
-		uri: `${this.store.config.media.source}/` +
-			`${this.profile.picture}.${this.profile.pictureType}`
-	}}
+	@computed get picture() {
+		if (this.profile.picture) {
+			return {
+				uri: `${this.store.config.media.source}/` +
+					`${this.profile.picture}.${this.profile.pictureType}`
+			}
+		} else {
+			return require("../assets/profile-placeholder.png")
+		}
+	}
 
 	@computed get posts() { return this.postIndex.value }
 	@computed get topics() { return this.topicIndex.value }
@@ -217,21 +223,52 @@ export default class User {
 	}
 
 
-	@action load() {
+	@action load(...args) {
 		return new Promise((resolve, reject) => {
 			this.loading = true
 			Promise
 				.all([
-					this.profile.load(),
-					this.postIndex.load(),
-					this.topicIndex.load(),
-					this.PDMIndex.load(),
-					this.ADMIndex.load(),
-					this.followerIndex.load(),
-					this.followingIndex.load(),
-					this.integrityIndex.load(),
-					this.rightsIndex.load(),
-					this.sanctionIndex.load()
+
+					// Load user profile
+					(args.includes("profile") || args.length === 0) ?
+						this.profile.load() : null,
+
+					// Load user posts
+					(args.includes("posts") || args.length === 0) ?
+						this.postIndex.load() : null,
+
+					// Load user tags
+					(args.includes("tags") || args.length === 0) ?
+						this.topicIndex.load() : null,
+
+					// Load user PDM transactions
+					(args.includes("pdm") || args.length === 0) ?
+						this.PDMIndex.load() : null,
+
+					// Load user ADM transactions
+					(args.includes("adm") || args.length === 0) ?
+						this.ADMIndex.load() : null,
+
+					// Load user followers
+					(args.includes("followers") || args.length === 0) ?
+						this.followerIndex.load() : null,
+
+					// Load user following
+					(args.includes("following") || args.length === 0) ?
+						this.followingIndex.load() : null,
+
+					// Load user integrity
+					(args.includes("integrity") || args.length === 0) ?
+						this.integrityIndex.load() : null,
+
+					// Load user rights
+					(args.includes("rights") || args.length === 0) ?
+						this.rightsIndex.load() : null,
+
+					// Load user sanctions
+					(args.includes("sanctions") || args.length === 0) ?
+						this.sanctionIndex.load() : null
+
 				])
 				.then(() => {
 					this.loading = false
@@ -243,5 +280,30 @@ export default class User {
 				})
 		})
 	}
+
+
+	isFollowing(address) {
+		return new Promise((resolve, reject) => {
+			this.followingIndex
+				.load()
+				.then(index => resolve(
+					index.value.includes(address)
+				))
+				.catch(reject)
+		})
+	}
+
+
+	isFollowedBy(address) {
+		return new Promise((resolve, reject) => {
+			this.followerIndex
+				.load()
+				.then(index => resolve(
+					index.value.includes(address)
+				))
+				.catch(reject)
+		})
+	}
+
 
 }

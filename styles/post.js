@@ -6,24 +6,44 @@ import text from './text';
 
 
 
-const wingWidth = Dimensions.get("window").width *
-		(settings.layout.postWing - settings.layout.postWingOverlap)
-const margin = Dimensions.get("window").width *
-	settings.layout.postMargin
+const layout = settings.layout
+
+const screenWidth = Dimensions.get("window").width
+const screenHeight = Dimensions.get("window").height
+
+const margin = Math.round(screenWidth * layout.margin)
+
+const postHeight = Math.round(screenHeight * layout.postHeight)
+
+const postWidth = screenWidth - (2 * margin)
+const overlap =  Math.round((screenWidth * layout.postWingOverlap) - (2 * margin))
+const wingWidth = Math.round((screenWidth * (layout.postWing - (3.0 * layout.margin))) - 
+	overlap - margin)
+
+const fullWidth = postWidth + (2 * wingWidth) + (4 * margin)
+
+const headerHeight = Math.round(screenHeight * layout.postHeader)
+const reactorWidth = Math.round(screenWidth * layout.postReactor)
+
+const contentWidth = screenWidth - (2 * overlap) - (4 * margin)
+const contentHeight = postHeight - headerHeight - (2 * margin)
+
+const buttonSize = Math.round(overlap * 0.5)
+
+
+
 
 const column = {
 	...general.container,
 	alignItems: "flex-start",
-	minWidth: Dimensions.get("window").width - (2.0 * margin),
-	maxWidth: Dimensions.get("window").width - (2.0 * margin),
 	margin: margin,
 }
 
 
 const wing = {
 	...column,
-	minWidth: wingWidth - margin,
-	maxWidth: wingWidth - margin,
+	minWidth: wingWidth,
+	maxWidth: wingWidth,
 }
 
 
@@ -31,23 +51,23 @@ const post = StyleSheet.create({
 
 	window: {
 		...general.container,
-		maxWidth: Dimensions.get("window").width,
-		backgroundColor: settings.colors.neutralPalest,
+		minWidth: screenWidth - 2,
+		maxWidth: screenWidth - 2,
+		backgroundColor: "transparent",
 	},
 
 	container: {
 		...general.container,
-		minHeight: settings.layout.postHeight *
-			Dimensions.get("window").height,
+		minHeight: postHeight,
 	},
 
 	columns: {
 		...general.containerRow,
 		alignItems: "flex-start",
-		minWidth: Dimensions.get("window").width +
-			(2.0 * wingWidth),
-		maxWidth: Dimensions.get("window").width +
-			(2.0 * wingWidth),
+		minWidth: fullWidth,
+		maxWidth: fullWidth,
+		// border: layout.border,
+		// borderColor: settings.colors.neutralPalest,
 		backgroundColor: settings.colors.white
 	},
 
@@ -60,7 +80,9 @@ const post = StyleSheet.create({
 	columnMiddle: {
 		...column,
 		flexDirection: "row",
-		width: Dimensions.get("window").width,
+		justifyContent: "space-between",
+		minWidth: postWidth,
+		maxWidth: postWidth,
 	},
 
 	columnRight: {
@@ -73,20 +95,14 @@ const post = StyleSheet.create({
 	coreLeft: {
 		...general.container,
 		alignItems: "flex-start",
-		minWidth: Dimensions.get("window").width *
-			settings.layout.postWingOverlap,
-		maxWidth: Dimensions.get("window").width *
-			settings.layout.postWingOverlap,
+		minWidth: overlap,
+		maxWidth: overlap,
 	},
 
 	profilePictureHolder: {
-		width: (Dimensions.get("window").width
-			* settings.layout.postWingOverlap) - margin,
-		height: (Dimensions.get("window").width
-			* settings.layout.postWingOverlap) - margin,
-		borderBottomRightRadius: settings.layout.corner *
-			((Dimensions.get("window").width *
-			  settings.layout.postWingOverlap) - margin),
+		width: overlap,
+		height: overlap,
+		borderBottomRightRadius: Math.round(layout.corner * overlap),
 		overflow: "hidden"
 	},
 
@@ -99,16 +115,14 @@ const post = StyleSheet.create({
 	core: {
 		...general.container,
 		alignItems: "flex-start",
-		minWidth: (Dimensions.get("window").width *
-			(1.0 - settings.layout.postWingOverlap)) - (2.0 * margin),
-		maxWidth: (Dimensions.get("window").width *
-			(1.0 - settings.layout.postWingOverlap)) - (2.0 * margin),
+		minWidth: contentWidth + margin + overlap,
+		maxWidth: contentWidth + margin + overlap,
 	},
 
 	header: {
 		...general.containerRow,
-		minHeight: settings.layout.postHeader * Dimensions.get("window").width,
-		maxHeight: settings.layout.postHeader * Dimensions.get("window").width,
+		minHeight: headerHeight,
+		maxHeight: headerHeight,
 		width: "100%",
 	},
 
@@ -121,7 +135,6 @@ const post = StyleSheet.create({
 	authorName: {
 		...text.title,
 		fontSize: settings.fontsize.smallish,
-		fontWeight: 600,
 		paddingBottom: 0
 	},
 
@@ -130,16 +143,14 @@ const post = StyleSheet.create({
 		fontSize: settings.fontsize.smaller,
 		color: settings.colors.neutralDarkest,
 		paddingBottom: 0,
-		paddingLeft: 4,
+		paddingLeft: Math.round(settings.fontsize.smaller * 0.5),
 	},
 
 	reactionHolder: {
 		...general.container,
 		alignSelf: "flex-end",
-		minWidth: settings.layout.postReactor *
-			Dimensions.get("window").width,
-		maxWidth: settings.layout.postReactor *
-			Dimensions.get("window").width,
+		minWidth: reactorWidth,
+		maxWidth: reactorWidth,
 		height: "100%",
 		backgroundColor: "pink"
 	},
@@ -147,25 +158,20 @@ const post = StyleSheet.create({
 
 	body: {
 		...general.containerRow,
-		flexGrow: 1,
-		alignItems: "flex-start",
-		marginTop: margin * 0.5,
-		width: "100%"
+		alignItems: "stretch",
+		width: "100%",
+		minHeight: contentHeight,
+		maxHeight: contentHeight,
 	},
 
 	bodyText: {
 		...text.body,
-		minWidth: (Dimensions.get("window").width *
-			(1.0 - (2.0 * settings.layout.postWingOverlap))) -
-			(2.0 * margin),
-		maxWidth: (Dimensions.get("window").width *
-			(1.0 - (2.0 * settings.layout.postWingOverlap))) -
-			(2.0 * margin),
-		minHeight: Dimensions.get("window").height *
-			(settings.layout.postHeight -
-				settings.layout.postHeader),
+		minWidth: contentWidth,
+		maxWidth: contentWidth,
+		minHeight: contentHeight - margin,
 		fontSize: settings.fontsize.small,
-		paddingLeft: margin * 0.5,
+		padding: Math.round(margin * 0.5),
+		paddingBottom: 0
 	},
 
 
@@ -173,41 +179,33 @@ const post = StyleSheet.create({
 	coreRight: {
 		...general.container,
 		justifyContent: "space-between",
-		minWidth: (Dimensions.get("window").width *
-			settings.layout.postWingOverlap) - margin,
-		maxWidth: (Dimensions.get("window").width *
-			settings.layout.postWingOverlap) - margin,
-		height: "100%",
+		minWidth: overlap,
+		maxWidth: overlap,
 	},
 
 	buttonHolder: {
 		...general.containerRow,
 		justifyContent: "flex-end",
-		maxWidth: "100%",
-		maxHeight: Dimensions.get("window").width *
-			(settings.layout.postWingOverlap * 0.5),
-		marginTop: margin
+		minWidth: overlap,
+		maxWidth: overlap,
+		minHeight: buttonSize,
+		maxHeight: buttonSize,
 	},
 
 	button: {
 		...general.container,
 		alignSelf: "stretch",
-		minWidth: Dimensions.get("window").width *
-			(settings.layout.postWingOverlap * 0.5),
-		maxWidth: Dimensions.get("window").width *
-			(settings.layout.postWingOverlap * 0.5),
-		minHeight: Dimensions.get("window").width *
-			(settings.layout.postWingOverlap * 0.5),
-		maxHeight: Dimensions.get("window").width *
-			(settings.layout.postWingOverlap * 0.5),
+		minWidth: buttonSize,
+		maxWidth: buttonSize,
+		minHeight: buttonSize,
+		maxHeight: buttonSize,
 	},
 
 	counter: {
 		...text.title,
 		width: "100%",
 		paddingBottom: 0,
-		paddingRight: settings.fontsize.tiny * 0.5,
-		fontWeight: 600,
+		paddingRight: Math.round(settings.fontsize.tiny * 0.5),
 		textAlign: "right",
 		fontSize: settings.fontsize.tiny,
 	}
