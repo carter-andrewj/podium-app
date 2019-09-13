@@ -1,5 +1,10 @@
 const settings = {
 
+	server: {
+		local: true,
+		url: "http://ec2-184-72-129-237.compute-1.amazonaws.com/"
+	},
+
 	fonts: {
 		body: "Varela",
 		titles: "VarelaRound"
@@ -88,10 +93,11 @@ const settings = {
 		// General
 		corner: 0.38,			// Border radius of images with 1 corner rounded (% of image width)
 		button: 0.07,			// Size of standard square HUD button (% of screen width)
-		spinTime: 500,			// Spin duration for loading icon (ms)
+		buttonIcon: 0.045,		// Size of icon in standard square HUD buton (% of screen width)
+		spinTime: 800,			// Spin duration for loading icon (ms)
 
 		// Quick Profile
-		quickProfile: 0.15,		// Minimum size of quick profile element in left drawer (% of screen height)
+		quickProfile: 0.12,		// Minimum size of quick profile element in left drawer (% of screen height)
 		quickProfileCap: 0.4,	// Maximum size of quick profile element in left drawer (% of screen height)
 		quickProfileName: 0.06,	// Height of name element in quick profile (% of screen height)
 

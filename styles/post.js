@@ -13,10 +13,14 @@ const screenHeight = Dimensions.get("window").height
 
 const margin = Math.round(screenWidth * layout.margin)
 
-const postHeight = Math.round(screenHeight * layout.postHeight)
+//const buttonSize = Math.round(overlap * 0.5)
+//const postHeight = Math.round(screenHeight * layout.postHeight)
+
+const buttonSize = Math.round(screenWidth * layout.button)
 
 const postWidth = screenWidth - (2 * margin)
-const overlap =  Math.round((screenWidth * layout.postWingOverlap) - (2 * margin))
+//const overlap =  Math.round((screenWidth * layout.postWingOverlap) - (2 * margin))
+const overlap = 2 * buttonSize
 const wingWidth = Math.round((screenWidth * (layout.postWing - (3.0 * layout.margin))) - 
 	overlap - margin)
 
@@ -25,10 +29,12 @@ const fullWidth = postWidth + (2 * wingWidth) + (4 * margin)
 const headerHeight = Math.round(screenHeight * layout.postHeader)
 const reactorWidth = Math.round(screenWidth * layout.postReactor)
 
-const contentWidth = screenWidth - (2 * overlap) - (4 * margin)
-const contentHeight = postHeight - headerHeight - (2 * margin)
+const postHeight = headerHeight + (2 * buttonSize) + (4 * margin)
 
-const buttonSize = Math.round(overlap * 0.5)
+const contentWidth = screenWidth - (2 * overlap) - (4 * margin)
+const contentHeight = (2 * buttonSize) + margin
+
+
 
 
 
@@ -51,8 +57,8 @@ const post = StyleSheet.create({
 
 	window: {
 		...general.container,
-		minWidth: screenWidth - 2,
-		maxWidth: screenWidth - 2,
+		minWidth: screenWidth,
+		maxWidth: screenWidth,
 		backgroundColor: "transparent",
 	},
 
@@ -66,8 +72,6 @@ const post = StyleSheet.create({
 		alignItems: "flex-start",
 		minWidth: fullWidth,
 		maxWidth: fullWidth,
-		// border: layout.border,
-		// borderColor: settings.colors.neutralPalest,
 		backgroundColor: settings.colors.white
 	},
 
@@ -152,7 +156,6 @@ const post = StyleSheet.create({
 		minWidth: reactorWidth,
 		maxWidth: reactorWidth,
 		height: "100%",
-		backgroundColor: "pink"
 	},
 
 
@@ -160,8 +163,8 @@ const post = StyleSheet.create({
 		...general.containerRow,
 		alignItems: "stretch",
 		width: "100%",
-		minHeight: contentHeight,
-		maxHeight: contentHeight,
+		minHeight: contentHeight + margin,
+		maxHeight: contentHeight + margin,
 	},
 
 	bodyText: {
@@ -171,7 +174,7 @@ const post = StyleSheet.create({
 		minHeight: contentHeight - margin,
 		fontSize: settings.fontsize.small,
 		padding: Math.round(margin * 0.5),
-		paddingBottom: 0
+		paddingBottom: 0,
 	},
 
 
@@ -181,11 +184,12 @@ const post = StyleSheet.create({
 		justifyContent: "space-between",
 		minWidth: overlap,
 		maxWidth: overlap,
+		marginTop: margin,
 	},
 
 	buttonHolder: {
 		...general.containerRow,
-		justifyContent: "flex-end",
+		justifyContent: "center",
 		minWidth: overlap,
 		maxWidth: overlap,
 		minHeight: buttonSize,

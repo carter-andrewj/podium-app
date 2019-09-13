@@ -50,7 +50,7 @@ const quickSearch = StyleSheet.create({
 		marginTop: layout.border,
 		paddingLeft: inputPadding,
 		paddingRight: inputPadding,
-		borderRadius: "100%",
+		borderRadius: headerHeight,
 		...text.body,
 		fontSize: settings.fontsize.smallish,
 		backgroundColor: settings.colors.neutralPale,

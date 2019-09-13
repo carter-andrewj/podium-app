@@ -8,6 +8,8 @@ import { FontAwesomeIcon } from 'expo-fontawesome';
 import styles from '../styles/styles';
 import settings from '../settings';
 
+import SquareButton from './squareButton';
+
 
 
 @inject("store")
@@ -27,10 +29,6 @@ export default class FollowButton extends Component {
 		this.follow = this.follow.bind(this)
 		this.unfollow = this.unfollow.bind(this)
 
-		this.startSpin = this.startSpin.bind(this)
-		this.stopSpin = this.stopSpin.bind(this)
-		this.spinner = new Animated.Value(0.0)
-
 	}
 
 
@@ -40,16 +38,12 @@ export default class FollowButton extends Component {
 
 
 	checkFollow() {
-		this.startSpin()
 		this.props.store.session.user
 			.isFollowing(this.props.address)
-			.then(result => {
-				this.stopSpin()
-				this.updateState(state => state
-					.set("loading", false)
-					.set("following", result)
-				)
-			})
+			.then(result => this.updateState(state => state
+				.set("loading", false)
+				.set("following", result)
+			))
 			.catch(console.error)
 	}
 
@@ -57,19 +51,13 @@ export default class FollowButton extends Component {
 	follow() {
 		this.updateState(
 			state => state.set("loading", true),
-			() => {
-				this.startSpin()
-				this.props.store.session
-					.follow(this.props.address)
-					.then(() => {
-						this.stopSpin()
-						this.updateState(state => state
-							.set("loading", false)
-							.set("following", true)
-						)
-					})
-					.catch(console.error)
-			}
+			() => this.props.store.session
+				.follow(this.props.address)
+				.then(() => this.updateState(state => state
+					.set("loading", false)
+					.set("following", true)
+				))
+				.catch(console.error)
 		)
 	}
 
@@ -77,97 +65,42 @@ export default class FollowButton extends Component {
 	unfollow() {
 		this.updateState(
 			state => state.set("loading", true),
-			() => {
-				this.startSpin()
-				this.props.store.session
-					.unfollow(this.props.address)
-					.then(() => {
-						this.stopSpin()
-						this.updateState(state => state
-							.set("loading", false)
-							.set("following", true)
-						)
-					})
-					.catch(console.error)
-			}
+			() => this.props.store.session
+				.unfollow(this.props.address)
+				.then(() => this.updateState(state => state
+					.set("loading", false)
+					.set("following", true)
+				))
+				.catch(console.error)
 		)
 	}
 
 
 
-	startSpin() {
-		this.spinner.setValue(0.0)
-		if (this.state.loading) {
-			Animated
-				.timing(this.spinner, {
-					toValue: 1.0,
-					duration: settings.layout.spinTime,
-					easing: Easing.linear,
-					useNativeDriver: true
-				})
-				.start(this.startSpin)
-		} else {
-			this.stopSpin()
-		}
-	}
-
-	stopSpin() {
-		this.spinner.stopAnimation()
-		this.spinner.setValue(0.0)
-	}
-
 
 
 	render() {
+		return <SquareButton
+			
+			loading={this.state.loading}
+			onPress={this.state.following ?
+				this.unfollow :
+				this.follow
+			}
 
-		const spin = this.spinner.interpolate({
-			inputRange: [0.0, 1.0],
-			outputRange: ["0deg", "360deg"]
-		})
+			icon="eye"
+			color={this.state.following ?
+				settings.colors.white :
+				settings.colors.major
+			}
+			background={this.state.following ?
+				settings.colors.major :
+				settings.colors.white
+			}
+			border={settings.colors.major}
 
-		const size = this.props.size || 1.0
-
-		return <View style={[
-				styles.button.followButton,
-				this.state.loading ?
-					styles.button.followLoading :
-					this.state.following ?
-						styles.button.followOn :
-						styles.button.followOff,
-				{ transform: [{ scale: size }]},
-				this.props.style
-			]}>
-			<TouchableOpacity
-				style={styles.container}
-				onPress={this.state.loading ?
-					null :
-					this.state.following ?
-						this.unfollow :
-						this.follow
-				}>
-				<Animated.View
-					style={[
-						styles.container,
-						{ transform: [{ rotate: spin }]}
-					]}>
-					<FontAwesomeIcon
-						icon={this.state.loading ?
-							"circle-notch" :
-							"eye"
-						}
-						size={size * 18.0}
-						color={this.state.loading ?
-							settings.colors.white :
-							this.state.following ?
-								settings.colors.white :
-								settings.colors.major
-						}
-						style={styles.button.followIcon}
-					/>
-				</Animated.View>
-			</TouchableOpacity>
-		</View>
-	
+		/>
 	}
+	
 
 }

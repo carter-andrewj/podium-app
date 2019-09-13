@@ -9,7 +9,8 @@ import globals from '../../globals';
 import settings from '../../settings';
 import styles from '../../styles/styles';
 
-import Button from '../../components/button';
+import SquareButton from '../../components/squareButton';
+import Spinner from '../../components/spinner';
 
 
 
@@ -28,6 +29,8 @@ class Post extends Component {
 		this.pan = new Animated.ValueXY()
 		this.height = null
 
+		this.corner = styles.post.profilePictureHolder.borderBottomRightRadius
+
 		this.state = {
 			location: 0
 		}
@@ -36,96 +39,70 @@ class Post extends Component {
 
 		this.animUpdate = false
 
-		this.setLocation = this.setLocation.bind(this)
+		this.beginPan = this.beginPan.bind(this)
 		this.resetPan = this.resetPan.bind(this)
+		this.endPan = this.endPan.bind(this)
+		this.setLocation = this.setLocation.bind(this)
 		this.panTo = this.panTo.bind(this)
 
 		// Set up screen pan
 		this.panResponder = PanResponder.create({
-
-			// Handle trigger conditions
-			onMoveShouldSetPanResponder: (event, { dx, dy }) => {
-
-				// Get location within post
-				const y = event.nativeEvent.locationY
-
-				// Continue if this post has locked the screen
-				if (globals.screenLock === this.props.address) {
-					return true
-
-				// Ignore if another component has locked the screen
-				} else if (globals.screenLock) {
-					return false
-
-				// Otherwise, lock the screen to this post
-				} else if (y > settings.layout.deadZone
-						&& y < (this.height - settings.layout.deadZone)
-						&& (Math.abs(dx) > Math.max(
-							settings.layout.panStart / 2.0,
-							Math.abs(dy)
-						))
-						&& (this.location > -1 || dx < 0)
-						&& (this.location < 1 || dx > 0)
-					) {
-					globals.screenLock = this.props.address.item
-					return true
-
-				// Otherwise, do nothing
-				} else {
-					return false
-				}
-
-			},
-
-			// Handle pan start
+			onMoveShouldSetPanResponder: this.beginPan,
 			onPanResponderGrant: this.resetPan,
-
-			// Handle screen movement
-			onPanResponderMove: Animated.event([
-				null,
-				{ dx: this.pan.x }
-			]),
-
-			// Handle screen release
-			onPanResponderRelease: (_, { dx, vx }) => {
-
-				// Release screenlock
-				globals.screenLock = false
-
-				// Get threshold variables
-				const xLimit = this.span * settings.layout.xLimit
-				const vLimit = settings.layout.vLimit
-				const x = -1.0 * dx
-				const v = -1.0 * vx
-
-				// Calculate destination
-				let destination = 0;
-				if (this.location > -1 && (
-						(x < (-1.0 * xLimit)) ||
-						(v < (-1.0 * vLimit))
-					)) {
-					destination = -1
-				} else if (this.location < 1 && (
-						(x > xLimit) ||
-						(v > vLimit)
-					)) {
-					destination = 1
-				}
-
-				// Animate window
-				this.panTo(destination, false)
-
-			},
-
-			// Handle pan termination
-			onResponderTerminate: () => {
-				globals.screenLock = false
-			}
-			
+			onPanResponderMove: Animated
+				.event([null, { dx: this.pan.x }]),
+			onPanResponderRelease: this.endPan,
+			onResponderTerminate: () => { globals.screenLock = false }	
 		})
 
 	}
 
+
+	componentWillMount() {
+		let post = this.props.store.posts.get(this.props.address)
+		let author = this.props.store.users.get(post.author)
+		this.updateState(state => state
+			.set("post", post)
+			.set("author", author)
+		)
+	}
+
+
+
+// PAN
+
+	beginPan(event, { dx, dy }) {
+
+		// Get location within post
+		const y = event.nativeEvent.locationY
+		
+		// Continue if this post has locked the screen
+		if (globals.screenLock === this.props.address) {
+			return true
+
+		// Ignore if another component has locked the screen
+		} else if (globals.screenLock) {
+			return false
+
+		// Otherwise, lock the screen to this post
+		} else if (y > settings.layout.deadZone
+				&& y < (this.height - settings.layout.deadZone)
+				&& (Math.abs(dx) > Math.max(
+					settings.layout.panStart / 2.0,
+					Math.abs(dy)
+				))
+				&& (this.location > -1 || dx < 0)
+				&& (this.location < 1 || dx > 0)
+			) {
+			globals.screenLock = this.props.address
+			return true
+
+		// Otherwise, do nothing
+		} else {
+			return false
+		}
+
+	}
 
 
 	resetPan() {
@@ -138,6 +115,38 @@ class Post extends Component {
 			y: 0
 		})
 	}
+
+
+	endPan(_, { dx, vx }) {
+
+		// Release screenlock
+		globals.screenLock = false
+
+		// Get threshold variables
+		const xLimit = this.span * settings.layout.xLimit
+		const vLimit = settings.layout.vLimit
+		const x = -1.0 * dx
+		const v = -1.0 * vx
+
+		// Calculate destination
+		let destination = 0;
+		if (this.location > -1 && (
+				(x < (-1.0 * xLimit)) ||
+				(v < (-1.0 * vLimit))
+			)) {
+			destination = -1
+		} else if (this.location < 1 && (
+				(x > xLimit) ||
+				(v > vLimit)
+			)) {
+			destination = 1
+		}
+
+		// Animate window
+		this.panTo(destination, false)
+
+	}
+
 
 	setLocation() {
 		if (this.location !== this.state.location) {
@@ -177,33 +186,33 @@ class Post extends Component {
 	}
 
 
+
+// RENDER
+
 	render() {
 
-		// let post = this.props.store.posts.get(this.props.address)
-		// let author = this.props.store.users.get(post.author)
+		// Unpack state
+		let post = this.state.post
+		let author = this.state.author
 
-		let post = {
-			content: "This is a test post.",//\n\n\n\n\nwith\n\nlots of\n\n\n\n\nlines.",
-			replies: ["address", "otheraddress"],
-			promos: ["addressagain"],
-			created: 1567359036,
-		}
+		// Pan animator
+		let transform = this.pan.getTranslateTransform()[0]
 
-		let author = {
-			picture: require("../../assets/profile-placeholder.png"),
-			identity: "@testuser",
-			name: "Test User",
-			bio: "Biography of a test user goes here.",
-			created: 1567349036,
-			affinity: 0.864,
-			integrity: 0.632,
-			pdm: 3241,
-			adm: 52
-		}
+		// Picture corner animator
+		let leftCorner = this.pan.x
+			.interpolate({
+				inputRange: [0, this.span],
+				outputRange: [0, this.corner]
+			})
+		let rightCorner = this.pan.x
+			.interpolate({
+				inputRange: [0, this.span],
+				outputRange: [this.corner, 0]
+			})
 
-		const transform = this.pan.getTranslateTransform()[0]
-
+		// Build components
 		return <View
+			key={this.props.key}
 			style={styles.post.window}
 			onLayout={({ nativeEvent }) => {
 				this.height = nativeEvent.layout.height
@@ -235,12 +244,22 @@ class Post extends Component {
 
 
 						<View style={styles.post.coreLeft}>
-							<View style={styles.post.profilePictureHolder}>
-								<Image
-									style={styles.post.profilePicture}
-									source={author.picture}
-								/>
-							</View>
+							<Animated.View style={[
+									styles.post.profilePictureHolder,
+									{
+										borderBottomRightRadius: rightCorner,
+										borderBottomLeftRadius: leftCorner
+									}
+								]}>
+								{author.picture ?
+									<Image
+										style={styles.post.profilePicture}
+										source={author.picture}
+									/>
+									:
+									<Spinner/>
+								}
+							</Animated.View>
 						</View>
 
 
@@ -269,7 +288,7 @@ class Post extends Component {
 
 								<TouchableOpacity onPress={() => console.log("to post")}>
 									<Text style={styles.post.bodyText}>
-										{post.content}
+										{post.text}
 									</Text>
 								</TouchableOpacity>
 
@@ -277,31 +296,37 @@ class Post extends Component {
 								<View style={styles.post.coreRight}>
 							
 									<View style={styles.post.buttonHolder}>
-										<View style={styles.post.button}>
-											<Text style={styles.post.counter}>
-												{post.promos.length}
-											</Text>
-										</View>
-										<Button 
-											style={styles.post.button}
+										<SquareButton
+											label={post.promotionCount}
+											size={1.1}
+											color={settings.colors.neutral}
+											background={settings.colors.white}
+											onPress={() => console.log("view promos")}
+										/>
+										<SquareButton 
 											icon="bullhorn"
-											iconSize={20}
-											color={settings.colors.white}
+											size={1.1}
+											color={settings.colors.neutral}
+											background={settings.colors.white}
+											contentStyle={{ transform: [{ translateY: -1 }]}}
 											onPress={() => console.log("promote")}
 										/>
 									</View>
 
 									<View style={styles.post.buttonHolder}>
-										<View style={styles.post.button}>
-											<Text style={styles.post.counter}>
-												{post.replies.length}
-											</Text>
-										</View>
-										<Button
-											style={styles.post.button}
+										<SquareButton
+											label={post.replyCount}
+											size={1.1}
+											color={settings.colors.neutral}
+											background={settings.colors.white}
+											onPress={() => console.log("view replies")}
+										/>
+										<SquareButton
 											icon="reply"
-											iconSize={20}
-											color={settings.colors.white}
+											size={1.1}
+											color={settings.colors.neutral}
+											background={settings.colors.white}
+											contentStyle={{ transform: [{ translateX: -1 }]}}
 											onPress={() => console.log("reply")}
 										/>
 									</View>

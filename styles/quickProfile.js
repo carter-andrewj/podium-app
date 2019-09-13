@@ -3,6 +3,7 @@ import { StyleSheet, Dimensions } from 'react-native';
 import settings from '../settings';
 import general from './general';
 import text from './text';
+import profile from './profile';
 
 
 
@@ -22,7 +23,8 @@ const margin = Math.round(layout.margin * screenWidth)
 
 const picture = profileHeight - (2 * margin)
 
-const titleHeight = Math.round(layout.quickProfileName * screenHeight)
+const titleHeight = profile.name.fontSize +
+	profile.identity.fontSize + Math.round(margin * 0.5)
 
 
 
@@ -101,7 +103,7 @@ const quickProfile = StyleSheet.create({
 		width: "100%",
 		position: "relative",
 		alignItems: "stretch",
-		marginTop: Math.round(margin * 0.5),
+		marginTop: margin,
 	},
 
 	bio: {
@@ -115,7 +117,7 @@ const quickProfile = StyleSheet.create({
 		...text.body,
 		fontSize: settings.fontsize.small,
 		position: "absolute",
-		top: Math.round(margin * 0.5),
+		top: margin,
 		width: "100%",
 		color: "transparent",
 	},

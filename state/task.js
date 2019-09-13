@@ -46,7 +46,7 @@ export default class Task {
 		this.subscribe = this.subscribe.bind(this)
 
 		// Set status
-		this.update("Pending")
+		this.update({ update: "Pending" })
 		this.created = this.updated
 
 		// Listen for updates
@@ -103,7 +103,7 @@ export default class Task {
 				this.error = data.error
 
 				// Set failed status
-				this.update("Failed")
+				this.update({ update: "Failed" })
 				this.complete = true
 
 				// Update subscribers
@@ -117,7 +117,7 @@ export default class Task {
 				this.result = data.result
 
 				// Set status
-				this.update("Complete")
+				this.update({ update: "Complete" })
 				this.complete = true
 
 				// Update subscribers

@@ -10,9 +10,6 @@ export default class Session {
 
 	@observable tasks = {};
 
-	pending = []
-	@observable feed = []
-
 	alerts = observable.array([])
 
 
@@ -229,13 +226,14 @@ export default class Session {
 	}
 
 
+
 	getFeed() {
 		return new Promise((resolve, reject) => {
 			this.store.api
 				.task("feed")
-				.subscribe(post => {
-					this.pending.push(post)
-				})
+				.subscribe(({ post }) => { if (post) {
+					this.store.posts.add(post, true)
+				}})
 				.then(resolve)
 				.catch(reject)
 		})

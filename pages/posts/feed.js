@@ -1,6 +1,10 @@
 import React from 'react';
 import Page from '../../utils/page';
-import { Dimensions, FlatList, Text, View } from 'react-native';
+import { Dimensions, FlatList, Text, View,
+		 TouchableOpacity } from 'react-native';
+import { FontAwesomeIcon } from 'expo-fontawesome';
+
+import { toJS } from 'mobx';
 import { inject, observer } from 'mobx-react';
 
 import globals from '../../globals';
@@ -9,18 +13,7 @@ import styles from '../../styles/styles';
 
 import Post from './post';
 
-
-
-const testThreads = [
-	"testpost1",
-	"testpost2",
-	"testpost3",
-	"testpost4",
-	"testpost5",
-	"testpost6",
-	"testpost7",
-]
-
+import Spinner from '../../components/spinner';
 
 
 
@@ -37,28 +30,21 @@ class Feed extends Page {
 			loading: false
 		}
 
-		this.keyIndex = 0
-		this.loader = null
-
 		this.feed = React.createRef()
 
 		this.thread = this.thread.bind(this)
-		this.threadKey = this.threadKey.bind(this)
-		this.loadThreads = this.loadThreads.bind(this)
-
 		this.header = this.header.bind(this)
 		this.footer = this.footer.bind(this)
 		this.empty = this.empty.bind(this)
 		this.spacer = this.spacer.bind(this)
 
+		this.scrollTo = this.scrollTo.bind(this)
 		this.lockScroll = this.lockScroll.bind(this)
 		this.unlockScroll = this.unlockScroll.bind(this)
 
 	}
 
-	componentDidMount() {
-		this.loadThreads()
-	}
+
 
 	shouldComponentUpdate(props) {
 		return !props.screenProps.animUpdate
@@ -74,84 +60,103 @@ class Feed extends Page {
 	}
 
 
+
+// COMPONENTS
+
+	thread({ item, index }) {
+
+		// Check type of element
+		switch (item.type) {
+
+			// Make notice elements
+			case "notice":
+				return <View style={styles.feed.notice}>
+					<View style={styles.feed.noticeBackground}>
+						<FontAwesomeIcon
+							icon="chevron-up"
+							size={100}
+							color={settings.colors.white}
+						/>
+					</View>
+					<Text style={styles.feed.noticeText}>
+						{`published ${item.value} new posts`}
+					</Text>
+				</View>
+
+			// Make threads
+			case "thread":
+				const { key, address, origin, appearances } = item
+				const stale = this.props.store.posts
+					.isStale(origin, appearances)
+				return <Post
+					key={key}
+					address={address}
+					stale={stale}
+					index={index}
+				/>
+
+			// Otherwise, return nothing
+			default: return null
+
+		}
+	}
+
+
+	header() {
+		const pending = this.props.store.posts.pending
+		return pending > 0 ?
+			<View
+				key="feed-header"
+				style={styles.feed.button}>
+				<TouchableOpacity
+					onPress={this.props.store.posts.publish}
+					style={styles.container}>
+					<Text style={styles.feed.buttonText}>
+						{`show ${pending} new posts`}
+					</Text>
+				</TouchableOpacity>
+			</View>
+			:
+			<View
+				key="feed-header"
+				style={styles.feed.notice}>
+				<Text style={styles.feed.noticeText}>
+					no new posts
+				</Text>
+			</View>
+	}
+
+
+	footer() {
+		return <View
+			key="feed-footer"
+			style={styles.feed.notice}>
+			<Spinner size={40} />
+		</View>
+	}
+
+	empty() {
+		return <View style={styles.feed.spacer} />
+	}
+
+	spacer({ leadingItem }) {
+		return <View
+			key={`${leadingItem.key}-spacer`}
+			style={styles.feed.separator}
+		/>
+	}
+
+
+
+
+
+// SCROLL
+
 	scrollTo(index) {
 		this.feed.current.scrollToIndex({
 			index: index,
 			viewPosition: 0.5
 		})
-	}
-
-
-
-	loadThreads() {
-		clearTimeout(this.loader)
-		this.updateState(
-			state => state.set("loading", true),
-			() => this.loader = setTimeout(
-				() => this.updateState(state => state
-					.update("threads", t => t.concat(testThreads))
-					.set("loading", false)
-				),
-				2000
-			)
-		)
-	}
-
-	thread(address, index) {
-		return <Post
-			key={`post-${index}`}
-			address={address}
-			index={index}
-		/>
-	}
-
-	threadKey() {
-		this.keyIndex++
-		return this.keyIndex - 1
-	}
-
-
-
-
-
-
-	header() {
-		return this.state.threads.length > 0 ?
-			<View
-				style={styles.container}
-				key="feed-header">
-				<View style={styles.feed.header}>
-					<Text>HEADER</Text>
-				</View>
-				{this.spacer("header")}
-			</View>
-			: null
-	}
-
-	footer() {
-		return this.state.threads.length > 0 ?
-			<View
-				key="feed-footer"
-				style={styles.feed.footer}>
-				{this.spacer("footer")}
-				<Text>FOOTER</Text>
-			</View>
-			: null
-	}
-
-	empty() {
-		return <View style={styles.feed.placeholder}>
-			<Text style={styles.feed.placeholderText}>
-				fetching posts
-			</Text>
-		</View>
-	}
-
-	spacer({ leadingItem }) {
-		return <View
-			key={`separator-${leadingItem}`}
-			style={styles.feed.separator}
-		/>
 	}
 
 	lockScroll(event) {
@@ -167,7 +172,12 @@ class Feed extends Page {
 	}
 
 
+
+
+//RENDER
+
 	render() {
+
 		return <View style={styles.feed.container}>
 			<FlatList
 
@@ -177,11 +187,12 @@ class Feed extends Page {
 				endFillColor={settings.colors.neutral}
 
 				ListHeaderComponent={this.header}
-				ListFooterComponent={this.footer}
 				ListEmptyComponent={this.empty}
+				ListFooterComponent={this.footer}
 				ItemSeparatorComponent={this.spacer}
 
-				data={this.state.threads}
+				data={this.props.store.posts.feed}
+				extraData={this.props.store.posts.pending}
 				initialNumToRender={5}
 
 				renderItem={this.thread}
@@ -208,11 +219,6 @@ class Feed extends Page {
 		</View>
 	}
 
-
-
-	componentWillUnmount() {
-		clearTimeout(this.loader)
-	}
 
 }
 

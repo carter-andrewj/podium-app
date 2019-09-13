@@ -1,6 +1,7 @@
 import React from 'react';
 import Page from '../../utils/page';
-import { View, ScrollView, Text, TextInput, Image } from 'react-native';
+import { View, ScrollView, Text, TextInput,
+		 Image, Dimensions } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
 import { List } from 'immutable';
@@ -8,6 +9,8 @@ import { List } from 'immutable';
 import settings from '../../settings';
 import styles from '../../styles/styles';
 
+import KeyboardView from '../../components/keyboardView';
+import SquareButton from '../../components/squareButton';
 import Button from '../../components/button';
 
 
@@ -16,36 +19,35 @@ import Button from '../../components/button';
 
 
 
-let i = 0
-
-function form(text, style) {
-	i = i + 1
-	return <Text key={i} style={style}>
+function form(text, style, index, wrap=true) {
+	return <Text
+		key={`input-section-${index}`}
+		style={style}
+		numberOfLines={wrap ? undefined : 1}>
 		{text}
 	</Text>
 }
 
-function urlForm(text) {
-	return form(text, styles.newPost.url)
+function urlForm(text, index) {
+	return form(text, styles.newPost.url, index)
 }
 
-function tagForm(text) {
+function tagForm(text, index) {
 	switch (text.slice(0, 1)) {
-		case "@": return form(text, styles.newPost.mention)
-		case "#": return form(text, styles.newPost.topic)
-		case "/": return form(text, styles.newPost.group)
-		default: return textForm(text)
+		case "@": return form(text, styles.newPost.mention, index, false)
+		case "#": return form(text, styles.newPost.topic, index, false)
+		case "/": return form(text, styles.newPost.group, index, false)
+		default: return textForm(text, index)
 	}
 }
 
-function textForm(text) {
-	return form(text, styles.newPost.text)
+function textForm(text, index) {
+	return form(text, styles.newPost.text, index)
 }
 
 const spacer = {
 	type: "text",
 	content: "",
-	element: textForm("")
 }
 
 
@@ -65,13 +67,13 @@ class CreatePost extends Page {
 			cost: 0,
 			cursor: -1,
 			atEnd: true,
-			scrollLock: true
+			scrollLock: true,
+			visibleHeight: Dimensions.get("window").height,
+			sending: false
 		}
 
 		this.input = null
 		this.scroll = null
-
-		this.scrollTimer = undefined
 
 		this.typePost = this.typePost.bind(this)
 		this.selectPost = this.selectPost.bind(this)
@@ -79,7 +81,9 @@ class CreatePost extends Page {
 		this.savePost = this.savePost.bind(this)
 		this.clearPost = this.clearPost.bind(this)
 
+		this.onKeyboard = this.onKeyboard.bind(this)
 		this.resize = this.resize.bind(this)
+		this.scrollToEnd = this.scrollToEnd.bind(this)
 
 	}
 
@@ -87,16 +91,17 @@ class CreatePost extends Page {
 		this.props.screenProps.setBanner(
 			"back",
 			<Button
-				key="banner-save"
+				key="banner-post-save"
 				icon="save"
 				onPress={this.savePost}
 			/>,
 			<Button
-				key="banner-clear"
+				key="banner-post-clear"
 				icon="trash-alt"
 				onPress={this.clearPost}
 			/>,
 			<Button
+				key="banner-post-send"
 				onPress={this.sendPost}
 				style={styles.newPost.sendButton}
 				color={settings.colors.major}
@@ -134,7 +139,6 @@ class CreatePost extends Page {
 						return {
 							type: "text",
 							content: text,
-							element: textForm(text),
 							cost: text.length * costs.perCharacter
 						}
 					})
@@ -144,7 +148,6 @@ class CreatePost extends Page {
 							return {
 								type: tag.slice(0, 1),
 								content: tag,
-								element: tagForm(tag),
 								cost: costs.tag
 							}
 						})
@@ -158,7 +161,6 @@ class CreatePost extends Page {
 					return {
 						type: "url",
 						content: url,
-						element: urlForm(url),
 						cost: costs.url
 					}
 				})
@@ -207,16 +209,11 @@ class CreatePost extends Page {
 				.set("postRich", formatted)
 				.set("selection", selection)
 				.set("cost", cost),
-			this.state.atEnd ?
-				() => this.scroll.scrollToEnd()
-				: null
+			this.scrollToEnd
 		)
 
 	}
 
-	checkPost(event) {
-		console.log(event)
-	}
 
 	selectPost(event) {
 
@@ -247,14 +244,28 @@ class CreatePost extends Page {
 
 
 	sendPost() {
-		console.log(this.state.post)
+		this.updateState(
+			state => state.set("sending", true),
+			() => this.props.store.session
+				.sendPost({
+					text: this.state.postRaw,
+					references: {},
+					media: {},
+					parent: this.props.parent
+				})
+				.then(() => this.updateState(
+					state => state.set("sending", false),
+					() => this.props.navigation.goBack(null)
+				))
+				.catch(console.error)
+		)
 	}
 
 	savePost() {
 		console.log("saved to drafts")
 	}
 
-	clearPost() { 
+	clearPost() {
 		this.updateState(state => state
 			.set("postRaw", "")
 			.set("postRich", [])
@@ -265,10 +276,16 @@ class CreatePost extends Page {
 
 
 
+	onKeyboard(height) {
+		this.updateState(state => state
+			.set("visibleHeight", height)
+		)
+	}
+
 	resize({ nativeEvent }) {
 
 		// Get height of components
-		const view = styles.keyboard.aboveWithHeaderWithAuto.minHeight
+		const view = this.state.visibleHeight
 		const header = styles.post.header.minHeight
 		const footer = styles.newPost.footer.minHeight
 		const margin = styles.post.columnMiddle.margin
@@ -278,7 +295,7 @@ class CreatePost extends Page {
 		let lock;
 		let height;
 		const textHeight = input + header + (2.0 * margin)
-		const viewHeight = view - footer - margin
+		const viewHeight = view - footer
 		if (textHeight > viewHeight) {
 			lock = false
 			height = textHeight
@@ -291,158 +308,138 @@ class CreatePost extends Page {
 		}
 
 		// Set new minimum view height
-		clearTimeout(this.scrollTimer)
 		this.updateState(
-
-			// Update state with new dimensions
 			state => state
 				.set("scrollLock", lock)
 				.set("content", input)
 				.set("height", height),
-
-			// Update scroll, if at end of input
-			this.state.atEnd ?
-				() => this.scrollTimer = setTimeout(
-					() => this.scroll.scrollToEnd(),
-					5
-				)
-				: null
-
+			this.scrollToEnd
 		)
 
 	}
+
+
+	scrollToEnd() {
+		if (!this.state.scrollLock && this.state.atEnd) {
+			this.scroll.scrollToEnd()
+		}
+	}
+
 
 
 	render() {
 
 		const selection = this.state.selection
 
-		return <View style={styles.container}>
+		return <KeyboardView
+			onChange={this.onKeyboard}
+			offset={styles.layout.mainHeader.minHeight}
+			style={styles.newPost.container}>
 
-			<View style={[
-					styles.keyboard.aboveWithHeaderWithAuto,
-					styles.newPost.container
-				]}>
+			<ScrollView
+				ref={ref => this.scroll = ref}
+				contentContainerStyle={{
+					minHeight: this.state.height,
+					maxHeight: this.state.height,
+				}}
+				scrollEnabled={!this.state.scrollLock}
+				showVerticalScrollIndicator={false}
+				showHorizontalScrollIndicator={false}
+				keyboardDismissMode="on-drag"
+				keyboardShouldPersistTaps="handled"
+				vertical={true}>
 
-				<ScrollView
-					ref={ref => this.scroll = ref}
-					contentContainerStyle={{
-						minHeight: this.state.height,
-						maxHeight: this.state.height,
-					}}
-					scrollEnabled={!this.state.scrollLock}
-					showVerticalScrollIndicator={false}
-					vertical={true}>
+				<View style={styles.post.columnMiddle}>
 
-					<View style={styles.post.columnMiddle}>
+					<View style={styles.post.coreLeft}>
+						<View style={styles.post.profilePictureHolder}>
+							<Image
+								style={styles.post.profilePicture}
+								source={this.props.store.session.user.picture}
+							/>
+						</View>
+					</View>
 
-						<View style={styles.post.coreLeft}>
-							<View style={styles.post.profilePictureHolder}>
-								<Image
-									style={styles.post.profilePicture}
-									source={require("../../assets/profile-placeholder.png")}
-								/>
+					<View style={styles.post.core}>
+
+
+						<View style={styles.post.header}>
+
+							<View style={styles.post.title}>
+								<Text style={styles.post.authorName}>
+									{this.props.store.session.user.name}
+								</Text>
+								<Text style={styles.post.authorRest}>
+									{this.props.store.session.user.identity}
+								</Text>
 							</View>
+
+							<View style={styles.post.reactionHolder}>
+							</View>
+
 						</View>
 
-						<View style={styles.post.core}>
 
+						<View style={styles.post.body}>
 
-							<View style={styles.post.header}>
+							<View style={styles.newPost.content}>
 
-								<View style={styles.post.title}>
-									<Text style={styles.post.authorName}>
-										Username
-									</Text>
-									<Text style={styles.post.authorRest}>
-										@identity
+								<View style={[
+										styles.newPost.output,
+										{ minHeight: this.state.content }
+									]}>
+									<Text>
+										{this.state.postRich.map((f, i) => {
+											switch (f.type) {
+												case "text": return textForm(f.content, i)
+												case "url": return urlForm(f.content, i)
+												default: return tagForm(f.content, i)
+											}
+										})}
 									</Text>
 								</View>
 
-								<View style={styles.post.reactionHolder}>
-								</View>
+								<TextInput
+
+									ref={ref => this.input = ref}
+									key="new-post"
+
+									placeholder="Say something..."
+									value={this.state.postRaw}
+									onChangeText={this.typePost}
+
+									onSelectionChange={this.selectPost}
+									onContentSizeChange={this.resize}
+
+									style={[
+										styles.newPost.input,
+										{ minHeight: this.state.content }
+									]}
+									autoFocus={true}
+									autoCorrect={true}
+									autoCapitalize="sentences"
+									multiline={true}
+
+									onBlur={() => this.input.focus()}
+									
+									returnKeyType="none"
+									keyboardType="twitter"
+
+								/>
 
 							</View>
 
 
-							<View style={styles.post.body}>
-
-
-
-								<View style={styles.newPost.content}>
-
-									<View style={[
-											styles.newPost.output,
-											{ minHeight: this.state.content }
-										]}>
-										<Text>
-											{this.state.postRich.map(f => f.element)}
-										</Text>
-									</View>
-
-									<TextInput
-
-										ref={ref => this.input = ref}
-										key="new-post"
-
-										placeholder="Say something..."
-										value={this.state.postRaw}
-										onChangeText={this.typePost}
-
-										onSelectionChange={this.selectPost}
-										onContentSizeChange={this.resize}
-
-										style={[
-											styles.newPost.input,
-											{ minHeight: this.state.content }
-										]}
-										autoFocus={true}
-										autoCorrect={true}
-										autoCapitalize="sentences"
-										multiline={true}
-
-										onBlur={() => this.input.focus()}
+							<View style={styles.post.coreRight}>
 						
-										returnKeyType="none"
-										keyboardType="twitter"
-
+								<View style={styles.post.buttonHolder}>
+									<SquareButton 
+										icon="photo-video"
+										size={1.6}
+										color={settings.colors.neutral}
+										background={settings.colors.white}
+										onPress={() => console.log("insert media")}
 									/>
-
-								</View>
-
-
-								<View style={styles.post.coreRight}>
-							
-									<View style={styles.post.buttonHolder}>
-										<View style={styles.post.button}>
-											<Text style={styles.post.counter}>
-												0
-											</Text>
-										</View>
-										<Button 
-											style={styles.post.button}
-											icon="bullhorn"
-											iconSize={20}
-											color={settings.colors.white}
-											onPress={() => console.log("promote")}
-										/>
-									</View>
-
-									<View style={styles.post.buttonHolder}>
-										<View style={styles.post.button}>
-											<Text style={styles.post.counter}>
-												0
-											</Text>
-										</View>
-										<Button
-											style={styles.post.button}
-											icon="reply"
-											iconSize={20}
-											color={settings.colors.white}
-											onPress={() => console.log("reply")}
-										/>
-									</View>
-
 								</View>
 
 							</View>
@@ -451,39 +448,34 @@ class CreatePost extends Page {
 
 					</View>
 
-				</ScrollView>
+				</View>
 
-				<View
-					ref="footer"
-					style={styles.newPost.footer}>
+			</ScrollView>
 
+			<View style={styles.newPost.footer}>
+
+				<View style={styles.containerRow}>
 					{(selection && selection.type !== "text") ?
-						<View style={styles.containerRow}>
-							<Text>
-								Selected: {selection.content}
-							</Text>
-						</View>
-						:
-						<View style={styles.containerRow}>
-							<Text>
-								Cost: {this.state.cost}
-							</Text>
-						</View>
+						<Text>
+							Selected: {selection.content}
+						</Text>
+					: this.state.sending ?
+						<Text>
+							Sending...
+						</Text>
+					:
+						<Text>
+							Cost: {this.state.cost}
+						</Text>
 					}
-
 				</View>
 
 			</View>
 
-			<View style={styles.keyboard.belowWithAuto} />
+		</KeyboardView>
 
-		</View>
 	}
 
-
-	pageWillMount() {
-		clearTimeout(this.scrollTimer)
-	}
 
 }
 

@@ -11,6 +11,7 @@ import styles from './styles/styles';
 
 
 
+
 let store = new Store();
 
 

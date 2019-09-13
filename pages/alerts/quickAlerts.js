@@ -369,6 +369,7 @@ class QuickAlerts extends Component {
 					onScrollBeginDrag={this.lockScroll}
 					onScrollEndDrag={this.unlockScroll}
 					scrollsToTop={false}
+					showHorizontalScrollIndicator={false}
 					
 					onEndReachedThreshold={1.0}
 					onEndReached={this.props.store.session.loadAlerts}

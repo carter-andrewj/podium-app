@@ -65,7 +65,7 @@ const quickAlerts = StyleSheet.create({
 		flexGrow: 1,
 		paddingTop: margin,
 		paddingLeft: margin,
-		paddingRight: margin,
+		paddingRight: 2 * margin,
 	},
 
 

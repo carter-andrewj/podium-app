@@ -5,7 +5,7 @@ import { inject, observer } from 'mobx-react';
 
 import styles from '../../styles/styles';
 
-import Button from '../../components/button';
+import SquareButton from '../../components/squareButton';
 import FollowButton from '../../components/followButton';
 
 
@@ -43,7 +43,7 @@ class QuickResult extends Component {
 				{this.state.user ?
 					<View style={styles.quickSearch.resultLeft}>
 						<FollowButton address={this.props.address} />
-						<Button
+						<SquareButton
 							icon="at"
 							onPress={() => console.log("mention")}
 						/>

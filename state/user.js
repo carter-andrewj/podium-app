@@ -224,50 +224,71 @@ export default class User {
 
 
 	@action load(...args) {
+
+		// Filter loading targets
+		let only = args.filter(s => s.charAt(0) !== "!")
+		if (only.length === 0) {
+			only = ["profile", "posts", "topics", "pdm", "adm",
+					"followers", "following", "integrity",
+					"rights", "sanctions"]
+			only = only.filter(s => !args.includes("!" + s))
+		}
+
+		// Load data
 		return new Promise((resolve, reject) => {
 			this.loading = true
 			Promise
 				.all([
 
 					// Load user profile
-					(args.includes("profile") || args.length === 0) ?
-						this.profile.load() : null,
+					only.includes("profile") ?
+						this.profile.load()
+						: null,
 
 					// Load user posts
-					(args.includes("posts") || args.length === 0) ?
-						this.postIndex.load() : null,
+					only.includes("posts") ?
+						this.postIndex.load()
+						: null,
 
-					// Load user tags
-					(args.includes("tags") || args.length === 0) ?
-						this.topicIndex.load() : null,
+					// Load user #topics
+					only.includes("topics") ?
+						this.topicIndex.load()
+						: null,
 
 					// Load user PDM transactions
-					(args.includes("pdm") || args.length === 0) ?
-						this.PDMIndex.load() : null,
+					only.includes("pdm") ?
+						this.PDMIndex.load()
+						: null,
 
 					// Load user ADM transactions
-					(args.includes("adm") || args.length === 0) ?
-						this.ADMIndex.load() : null,
+					only.includes("adm") ?
+						this.ADMIndex.load()
+						: null,
 
 					// Load user followers
-					(args.includes("followers") || args.length === 0) ?
-						this.followerIndex.load() : null,
+					only.includes("followers") ?
+						this.followerIndex.load()
+						: null,
 
 					// Load user following
-					(args.includes("following") || args.length === 0) ?
-						this.followingIndex.load() : null,
+					only.includes("following") ?
+						this.followingIndex.load()
+						: null,
 
 					// Load user integrity
-					(args.includes("integrity") || args.length === 0) ?
-						this.integrityIndex.load() : null,
+					only.includes("integrity") ?
+						this.integrityIndex.load()
+						: null,
 
 					// Load user rights
-					(args.includes("rights") || args.length === 0) ?
-						this.rightsIndex.load() : null,
+					only.includes("rights") ?
+						this.rightsIndex.load()
+						: null,
 
 					// Load user sanctions
-					(args.includes("sanctions") || args.length === 0) ?
-						this.sanctionIndex.load() : null
+					only.includes("sanctions") ?
+						this.sanctionIndex.load()
+						: null
 
 				])
 				.then(() => {

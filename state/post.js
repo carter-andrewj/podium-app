@@ -1,5 +1,7 @@
 import { observable, computed, action } from "mobx";
 
+import { formatNumber } from '../utils/utils';
+
 import Loadable from './loadable';
 
 
@@ -8,27 +10,39 @@ import Loadable from './loadable';
 
 class PostContent extends Loadable {
 	fetch(update) {
-		return this.store.api
-			.task("load post", { address: this.address })
-			.subscribe(update)
+		return new Promise((resolve, reject) => {
+			this.store.api
+				.task("load post", { address: this.address })
+				.subscribe(update)
+				.then(({ content }) => resolve(content))
+				.catch(reject)
+		})
 	}
 }
 
 
 class PostReplies extends Loadable {
 	fetch(update) {
-		return this.store.api
-			.task("index replies", { address: this.address })
-			.subscribe(update)
+		return new Promise((resolve, reject) => {
+			this.store.api
+				.task("index replies", { address: this.address })
+				.subscribe(update)
+				.then(({ index }) => resolve(index))
+				.catch(reject)
+		})
 	}
 }
 
 
 class PostPromotions extends Loadable {
 	fetch(update) {
-		return this.store.api
-			.task("index promotions", { address: this.address })
-			.subscribe(update)
+		return new Promise((resolve, reject) => {
+			this.store.api
+				.task("index promotions", { address: this.address })
+				.subscribe(update)
+				.then(({ index }) => resolve(index))
+				.catch(reject)
+		})
 	}
 }
 
@@ -88,9 +102,11 @@ export default class Post {
 	@computed get amendments() { return this.content.amendments }
 	@computed get retraction() { return this.content.retraction }
 
-	@computed get replies() { return this.replyIndex.value }
+	@computed get replies() { return this.replyIndex.value || [] }
+	@computed get replyCount() { return formatNumber(this.replies.length)}
 
-	@computed get promotions() { return this.promotionIndex.value }
+	@computed get promotions() { return this.promotionIndex.value || [] }
+	@computed get promotionCount() { return formatNumber(this.promotions.length)}
 	@computed get promotedWithPDM() {
 		return this.promotions
 			.filter(p => p.currency === "PDM")
@@ -152,20 +168,47 @@ export default class Post {
 	}
 
 
-	// Load the post data. If "depth" is set
-	// will also load the next level of data
-	// (i.e. a depth of 2 will load 2 replies
-	// previously in the thread)
-	load(depth=2) {
+	// Load the post data
+	load(...args) {
+
+		// Filter loading targets
+		let only = args.filter(s => s.charAt(0) !== "!")
+		if (only.length === 0) {
+			only = ["author", "origin", "parent", "replies", "promotions"]
+			only = only.filter(s => !args.includes("!" + s))
+		}
+		
+		// Load data
 		return new Promise((resolve, reject) => {
 			this.content
 				.load()
 				.then(() => Promise.all([
-					this.loadAuthor(),
-					this.loadOrigin(),
-					this.loadParent(depth - 1),
-					this.replyIndex.load(),
-					this.promotionIndex.load()
+
+					// Load author data
+					only.includes("author") ?
+						this.loadAuthor()
+						: null,
+
+					// Load origin post
+					only.includes("origin") ?
+						this.loadOrigin()
+						: null,
+
+					// Load parent post
+					only.includes("parent") ?
+						this.loadParent("!parent")
+						: null,
+
+					// Load reply index
+					only.includes("replies") ?
+						this.replyIndex.load()
+						: null,
+
+					// Load promotion index
+					only.includes("promotions") ?
+						this.promotionIndex.load()
+						: null,
+
 				]))
 				.then(() => resolve(this))
 				.catch(reject)
@@ -179,7 +222,7 @@ export default class Post {
 			this.authorError = undefined
 			this.store.users
 				.add(this.author)
-				.load()
+				.load("profile")
 				.then(resolve)
 				.catch(error => {
 					this.authorError = error
@@ -189,15 +232,15 @@ export default class Post {
 	}
 
 
-	loadParent(depth=0) {
+	loadParent() {
 		return new Promise((resolve, reject) => {
-			if (this.depth <= 1) {
-				resolve()
+			if (!this.parent) {
+				resolve(this)
 			} else {
 				this.parentError = undefined
 				this.store.posts
 					.add(this.parent)
-					.load(depth)
+					.load("!parent")
 					.then(resolve)
 					.catch(error => {
 						this.parentError = error
@@ -207,10 +250,11 @@ export default class Post {
 		})
 	}
 
+
 	loadOrigin() {
 		return new Promise((resolve, reject) => {
 			if (this.origin === this.address) {
-				resolve()
+				resolve(this)
 			} else {
 				this.originError = undefined
 				this.store.posts

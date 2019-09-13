@@ -5,16 +5,20 @@ import general from './general';
 import text from './text';
 
 
+const layout = settings.layout
+
 const screenHeight = Dimensions.get("window").height
 const screenWidth = Dimensions.get("window").width
 
 
-const separator = Math.round(4.0 * settings.layout.border)
+const margin = Math.round(screenWidth * layout.margin)
 
-const feedHeight = Math.round(screenHeight * (1.0 - settings.layout.headerSize))
+const separator = Math.round(2.0 * layout.border)
 
-const headerHeight = Math.round(screenHeight * settings.layout.headerSize)
-
+const feedHeight = Math.round(screenHeight * (1.0 - layout.headerSize))
+const spacerHeight = Math.round(feedHeight * 0.3)
+const noticeHeight = Math.round(screenHeight * layout.headerSize)
+const buttonHeight = noticeHeight - (4 * margin)
 
 
 const feed = StyleSheet.create({
@@ -27,42 +31,68 @@ const feed = StyleSheet.create({
 	list: {
 		minWidth: screenWidth,
 		maxWidth: screenWidth,
+		minHeight: feedHeight,
 	},
 
 	separator: {
 		...general.container,
 		maxHeight: separator,
 		minHeight: separator,
-		backgroundColor: "transparent"
 	},
 
-	header: {
-		...general.containerRow,
-		minWidth: screenWidth,
-		height: headerHeight,
-		backgroundColor: settings.colors.white,
-	},
-
-	footer: {
-		...general.containerRow,
-		minWidth: screenWidth,
-		height: headerHeight,
-		backgroundColor: settings.colors.white,
-		borderTopWidth: settings.layout.border,
-		borderColor: settings.colors.neutralPalest
-	},
-
-	placeholder: {
+	spacer: {
 		...general.container,
-		minHeight: feedHeight,
-		maxHeight: feedHeight,
 		minWidth: screenWidth,
-		backgroundColor: settings.colors.white,
-		paddingBottom: headerHeight
+		maxWidth: screenWidth,
+		minHeight: spacerHeight,
+		maxHeight: spacerHeight,
 	},
 
-	placeholderText: {
+	notice: {
+		...general.container,
+		justifyContent: "center",
+		minHeight: noticeHeight,
+		maxHeight: noticeHeight,
+		minWidth: screenWidth,
+		maxWidth: screenWidth,
+		backgroundColor: "transparent",
+	},
+
+	noticeBackground: {
+		...general.container,
+		position: "absolute",
+		top: 0,
+		left: 0,
+		justifyContent: "center",
+		minHeight: noticeHeight,
+		maxHeight: noticeHeight,
+		minWidth: screenWidth,
+		maxWidth: screenWidth,
+		opacity: 0.2
+	},
+
+	noticeText: {
 		...text.title,
+		color: settings.colors.white,
+		fontSize: settings.fontsize.normal,
+	},
+
+	button: {
+		...general.container,
+		alignSelf: "center",
+		marginTop: margin,
+		marginBottom: margin,
+		minHeight: buttonHeight,
+		maxHeight: buttonHeight,
+		maxWidth: "60%",
+		backgroundColor: settings.colors.white,
+		borderRadius: buttonHeight,
+	},
+
+	buttonText: {
+		...text.title,
+		color: settings.colors.major,
+		fontSize: settings.fontsize.normal,
 	}
 
 

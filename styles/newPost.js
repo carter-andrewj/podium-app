@@ -41,7 +41,6 @@ const newPost = StyleSheet.create({
 		alignItems: "stretch",
 		alignSelf: "flex-start",
 		backgroundColor: settings.colors.white,
-		paddingTop: margin,
 	},
 
 	content: {
@@ -60,7 +59,7 @@ const newPost = StyleSheet.create({
 
 	output: {
 		...inputContainer,
-		top: -2.5,
+		top: -3,
 		backgroundColor: settings.colors.white,
 	},
 

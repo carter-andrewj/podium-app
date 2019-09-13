@@ -2,15 +2,19 @@ import { Platform } from "react-native";
 import { observable, computed, action } from "mobx";
 import io from 'socket.io-client';
 
+import settings from '../settings';
+
 import Task from './task';
 
 
 
 let url;
-if (Platform.OS === "android") {
-	url = "http://10.0.2.2:3210"
+if (!settings.server.local) {
+	url = settings.server.url
+} else if (Platform.OS === "android") {
+	url = "http://10.0.2.2:3000"
 } else {
-	url = "http://localhost:3210"
+	url = "http://localhost:3000"
 }
 
 
@@ -37,7 +41,7 @@ export default class API {
 		return new Promise((resolve, reject) => {
 
 			// Create websocket
-			this.socket = io.connect(url, { transports: ["websocket"] })
+			this.socket = io.connect(url)
 
 			// Wait for connection to be confirmed
 			this.socket.on("connection", () => {

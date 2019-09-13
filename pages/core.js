@@ -330,8 +330,7 @@ class Core extends Page {
 
 	quickSearch() {
 		this.openRight()
-			.then(this.searchControls.focus)
-			.catch(console.error)
+		this.searchControls.focus()
 	}
 
 	quickAlerts() {

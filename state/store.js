@@ -6,6 +6,7 @@ import * as Font from 'expo-font';
 
 import API from './api';
 import UserStore from './userStore';
+import PostStore from './postStore';
 import Session from './session';
 
 
@@ -69,6 +70,7 @@ export default class Store {
 
 		this.api = new API(this)
 		this.users = new UserStore(this)
+		this.posts = new PostStore(this)
 		this.session = new Session(this)
 
 		this.loadLedger = this.loadLedger.bind(this)

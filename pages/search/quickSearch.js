@@ -297,6 +297,7 @@ class QuickSearch extends Component {
 					onScrollBeginDrag={this.lockScroll}
 					onScrollEndDrag={this.unlockScroll}
 					scrollsToTop={false}
+					showHorizontalScrollIndicator={false}
 					
 					refreshing={this.state.loading > 0}
 
