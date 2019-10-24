@@ -6,12 +6,14 @@ export default class Loadable {
 
 	@observable next = null;
 	@observable error = null;
-	@observable value = null;
+	// @observable value = null;
 	@observable ready = false;
 	@observable progress = null;
 	@observable step = null;
 
-	constructor(context) {
+	constructor(context, defaultValue=null) {
+
+		this.value = observable(defaultValue)
 
 		this.lifetime = context.store.config.records.reload
 		this.next = new Date().now - this.lifetime

@@ -1,254 +1,189 @@
-import { observable, computed, action, toJS, asFlat } from "mobx";
+import { observable, computed, action } from "mobx";
+
+import { getEntity } from './entities/entities';
+
+import Feed from './feed';
 
 
 
 export default class Session {
 
-	@observable authenticated = false;
-
-	@observable address = "";
-
-	@observable tasks = {};
-
-	alerts = observable.array([])
-
 
 	constructor(store) {
 
-		this.store = store;
+		// Refs
+		this.store = store
+		this.nation = store.nation
+		this.session = this
 
-		this.setTask = this.setTask.bind(this)
-		this.clearTask = this.clearTask.bind(this)
+		// Authentication
+		this.address = null
+		this.auth = null
+		this.keyPair = null
+		this.passphrase = null
+		this.authenticated = observable.box(false)
 
+		// State
+		this.alerts = observable.array()
+		this.entities = observable.map()
+		this.feed = new Feed(this)
+
+		// Methods
 		this.register = this.register.bind(this)
 		this.signIn = this.signIn.bind(this)
-		this.signOut = this.signOut.bind(this)
+		this.keyIn = this.keyIn.bind(this)
 
 		this.authenticate = this.authenticate.bind(this)
-		this.deauthenticate = this.deauthenticate.bind(this)
+		this.setCredentials = this.setCredentials.bind(this)
 
-		this.follow = this.follow.bind(this)
-		this.unfollow = this.unfollow.bind(this)
+		this.signOut = this.signOut.bind(this)
 
-		this.updateProfile = this.updateProfile.bind(this)
+		this.subscribe = this.subscribe.bind(this)
+		this.makeEntity = this.makeEntity.bind(this)
+		this.getEntity = this.getEntity.bind(this)
 
-		this.getFeed = this.getFeed.bind(this)
-
-	}
-
-
-
-	@computed get user() {
-		return this.store.users.get(this.address)
-	}
-
-
-
-	@action setTask(id, msg) {
-		this.tasks[id] = msg
-	}
-
-	@action clearTask(id) {
-		delete this.tasks[id]
-	}
-
-
-
-	register(identity, passphrase, onUpdate) {
-
-		// Set Status
-		this.setTask("register", "pending")
-
-		// Build updater
-		let updateHandler = status => {
-			this.setTask("register", status)
-			if (onUpdate) { onUpdate(status) }
-		}
-
-		return new Promise((resolve, reject) => {
-			this.store.api
-				.task(
-					"create user",
-					{
-						identity: identity,
-						passphrase: passphrase
-					}
-				)
-				.subscribe(updateHandler)
-				.then(({ keyPair }) => this.signIn(
-					keyPair, identity, passphrase, onUpdate
-				))
-				.then(() => {
-					this.clearTask("register")
-					resolve()
-				})
-				.catch(reject)
-		})
+		this.search = this.search.bind(this)
 
 	}
 
 
 
-	signIn(keyPair, identity, passphrase, onUpdate) {
+// AUTHENTICATION
 
-		// Set status
-		this.setTask("sign in", "pending")
-
-		// Build updater
-		let updateHandler = status => {
-			this.setTask("sign in", status)
-			if (onUpdate) { onUpdate(status) }
-		}
-
-		// Sign in with keypair
-		return new Promise((resolve, reject) => {
-			this.store.api
-				.task(
-					keyPair ? "key in" : "sign in",
-					{
-						keyPair: keyPair,
-						identity: identity,
-						passphrase: passphrase
-					}
-				)
-				.subscribe(updateHandler)
-				.then(result => {
-					if (result.error) {
-						console.error(error)
-						reject(error)
-					} else {
-						this.clearTask("sign in")
-						return this.authenticate(
-							result.address,
-							result.keyPair,
-							identity,
-							passphrase
-						)
-					}
-				})
-				.then(() => resolve(this))
-				.catch(reject)
-		})
+	register(alias, passphrase) {
+		this.passphrase = passphrase
+		return this.nation
+			.task("register", { alias, passphrase })
+			.then(this.authenticate)
+			.catch(console.error)
 
 	}
 
 
-	signOut(onUpdate) {
-		return new Promise((resolve, reject) => {
-			this.store.api
-				.task("sign out")
-				.subscribe(onUpdate)
-				.then(() => {
-					this.deauthenticate()
-					resolve(this)
-				})
-				.catch(reject)
-		})
+	signIn(alias, passphrase) {
+		this.passphrase = passphrase
+		return this.nation
+			.task("signIn", { alias, passphrase })
+			.then(this.authenticate)
+			.catch(console.error)
 	}
 
 
-	@action authenticate(address, keyPair, identity, passphrase) {
-		this.address = address
-		this.authenticated = true
+	keyIn(keyPair, passphrase) {
+		this.passphrase = passphrase
+		return this.nation
+			.task("keyIn", { keyPair, passphrase })
+			.then(this.authenticate)
+			.catch(console.error)
+	}
+
+
+	authenticate(credentials) {
+
+		// Set credentials
+		this.setCredentials(credentials)
+
+		// Authenticate
 		return Promise.all([
 
-			// Load this user's data
-			this.store.users.add(this.address).load(),
-
-			// Subscribe for this user's feed
-			this.getFeed(),
+			// Subscribe to user data
+			this.subscribe("user", this.address),
 
 			// Update keychain
-			this.store.addAccount(this.address, keyPair,
-								  identity, passphrase),
-
-			// Update auto-sign-in
-			this.store.setAccount(this.address)
+			this.store.addAccount(this.address, this.keyPair, this.passphrase),
 
 		])
+
 	}
 
 
-	@action deauthenticate() {
-		this.address = undefined
-		this.authenticated = false
+	@action
+	setCredentials({ address, auth, keyPair }) {
+
+		// Store credentials
+		this.auth = auth
+		this.address = address
+		this.keyPair = keyPair
+
+		// Set flag
+		this.authenticated.set(true)
+
+	}
+
+	signOut() {}
+
+
+
+
+// ENTITIES
+
+	@computed
+	get user() {
+		return this.entities.get(this.address)
 	}
 
 
-
-	follow(address, onUpdate) {
-		return new Promise((resolve, reject) => {
-			this.store.api
-				.task("follow", { address: address})
-				.subscribe(onUpdate)
-				.then(resolve)
-				.catch(reject)
-		})
-	}
-
-
-	unfollow(address, onUpdate) {
-		return new Promise((resolve, reject) => {
-			this.store.api
-				.task("unfollow", { address: address})
-				.subscribe(onUpdate)
-				.then(resolve)
-				.catch(reject)
-		})
-	}
-
-
-
-
-	updateProfile(profile, onUpdate) {
+	subscribe(type, address) {
 		return new Promise((resolve, reject) => {
 
-			// Build profile payload
-			const payload = {
-				...profile,
-				pictureType: profile.picture? "png" : undefined
+			// Check if entity is already subscribed
+			let current = this.entities.get(address)
+
+			// Return cached entity, if it exists
+			if (current) {
+				resolve(current)
+			} else {
+
+				// Get entity type
+				let entity = this.makeEntity(type, address)
+
+				// Read and return
+				entity
+					.read()
+					.then(resolve)
+					.catch(reject)
+
 			}
 
-			// Create update task
-			return this.store.api
-				.task("update profile", payload)
-				.subscribe(onUpdate)
-				.then(resolve)
-				.catch(reject)
-
 		})
 	}
 
 
+	@action
+	makeEntity(type, address) {
 
-	@action addAlert(alert) {
-		this.alerts.push(alert)
+		// Get entity class
+		let Entity = getEntity(type)
+
+		// Build entity
+		let newEntity = new Entity(this).fromAddress(address)
+
+		// Cache entity
+		this.entities.set(address, newEntity)
+
+		// Return entity
+		return this.entities.get(address)
+
+	}
+
+
+	getEntity(address) {
+		return this.entities.get(address)
 	}
 
 
 
-	getFeed() {
-		return new Promise((resolve, reject) => {
-			this.store.api
-				.task("feed")
-				.subscribe(({ post }) => { if (post) {
-					this.store.posts.add(post, true)
-				}})
-				.then(resolve)
-				.catch(reject)
-		})
+
+// DATABASE
+
+	search(terms, among) {
+		return this.nation.task("search", { terms, among })
 	}
 
 
-	sendPost(args, onUpdate) {
-		return new Promise((resolve, reject) => {
-			this.store.api
-				.task("create post", args)
-				.subscribe(onUpdate)
-				.then(resolve)
-				.catch(reject)
-		})
-	}
+
+
+
 
 
 

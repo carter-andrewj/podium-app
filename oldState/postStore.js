@@ -104,7 +104,6 @@ export default class PostStore {
 				}
 
 			})
-			.reverse()
 
 		// Create publication notice element
 		const notice = {
@@ -125,7 +124,9 @@ export default class PostStore {
 	}
 
 	@computed get feed() {
-		return this.published.reverse()
+		return this.published
+			.slice()
+			.reverse()
 			.reduce((out, next) => out.concat(...next), [])
 	}
 

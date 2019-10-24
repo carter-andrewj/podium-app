@@ -2,14 +2,18 @@ import React from 'react';
 import Component from '../../utils/component';
 import { Text, View, Image, Animated, Dimensions,
 		 PanResponder, TouchableOpacity } from 'react-native';
+import { FontAwesomeIcon } from 'expo-fontawesome';
 import { toJS } from 'mobx';
 import { inject, observer } from 'mobx-react';
+
+import { formatPercentage, colorPercentage } from '../../utils/utils';
 
 import globals from '../../globals';
 import settings from '../../settings';
 import styles from '../../styles/styles';
 
 import SquareButton from '../../components/squareButton';
+import FollowButton from '../../components/followButton';
 import Spinner from '../../components/spinner';
 
 
@@ -230,12 +234,32 @@ class Post extends Component {
 
 
 
-					<View
-						pointerEvents="none"
-						style={styles.post.columnLeft}>
-						<Text styles={styles.text.title}>
-							[PROFILE INFO]
-						</Text>
+					<View style={styles.post.columnLeft}>
+
+						<View style={styles.post.leftEdge}>
+							<FollowButton address={author.address} />
+							<SquareButton 
+								icon="at"
+								size={1.1}
+								color={settings.colors.neutral}
+								background={settings.colors.white}
+								onPress={() => console.log("mention")}
+							/>
+							<SquareButton 
+								icon="envelope"
+								size={1.1}
+								color={settings.colors.neutral}
+								background={settings.colors.white}
+								onPress={() => console.log("message")}
+							/>
+						</View>
+
+						<View style={styles.post.left}>
+							<Text style={styles.post.bio}>
+								{author.bio}
+							</Text>
+						</View>
+
 					</View>
 
 
@@ -243,8 +267,12 @@ class Post extends Component {
 					<View style={styles.post.columnMiddle}>
 
 
+
 						<View style={styles.post.coreLeft}>
-							<Animated.View style={[
+
+
+							<Animated.View
+								style={[
 									styles.post.profilePictureHolder,
 									{
 										borderBottomRightRadius: rightCorner,
@@ -260,7 +288,43 @@ class Post extends Component {
 									<Spinner/>
 								}
 							</Animated.View>
+
+
+							<View style={[
+									styles.post.gauge,
+									{ backgroundColor: colorPercentage(author.integrity) }
+								]}>
+								<FontAwesomeIcon
+									icon="balance-scale"
+									size={12}
+									color={settings.colors.white}
+									style={{ marginBottom: 1 }}
+								/>
+								<Text style={styles.post.gaugeText}>
+									{formatPercentage(author.integrity, 0)}
+								</Text>
+							</View>
+
+
+							<View style={[
+									styles.post.gauge,
+									{ backgroundColor: colorPercentage(author.affinity) }
+								]}>
+								<FontAwesomeIcon
+									icon="dna"
+									size={10}
+									color={settings.colors.white}
+								/>
+								<Text style={styles.post.gaugeText}>
+									{formatPercentage(author.affinity, 0)}
+								</Text>
+							</View>
+
+
 						</View>
+
+
+
 
 
 						<View style={styles.post.core}>

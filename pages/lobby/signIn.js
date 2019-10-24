@@ -19,17 +19,17 @@ class SignIn extends Page {
 		super()
 		
 		this.state = {
-			identity: "",
+			alias: "",
 			passphrase: "",
 			error: false,
 			loading: false,
 			show: false
 		}
 
-		this.identity = null;
-		this.passphrase = null;
+		this.alias = null
+		this.passphrase = null
 
-		this.typeIdentity = this.typeIdentity.bind(this)
+		this.typeAlias = this.typeAlias.bind(this)
 		this.typePassphrase = this.typePassphrase.bind(this)
 
 		this.submit = this.submit.bind(this);
@@ -42,10 +42,10 @@ class SignIn extends Page {
 	pageWillFocus(params) {
 		this.updateState(state => state
 			.set("error", params.error || false)
-			.set("identity", params.identity || ""),
-			params.identity ?
+			.set("alias", params.alias || ""),
+			params.alias ?
 				this.passphrase.focus :
-				this.identity.focus
+				this.alias.focus
 		)
 	}
 
@@ -60,11 +60,11 @@ class SignIn extends Page {
 	}
 
 
-	typeIdentity(id) {
-		const identity = id.trim()
-			.replace(this.props.store.config.validation.identity.chars, "")
+	typeAlias(id) {
+		const alias = id.trim()
+			.replace(this.props.store.config.validation.alias.chars, "")
 		this.updateState(state => state
-			.set("identity", identity)
+			.set("alias", alias)
 			.set("error", undefined)
 		)
 	}
@@ -79,21 +79,21 @@ class SignIn extends Page {
 	submit() {
 
 		// Unpack form data
-		let identity = this.state.identity;
-		let passphrase = this.state.passphrase;
+		let alias = this.state.alias
+		let passphrase = this.state.passphrase
 
 		// Get validation config
 		const val = this.props.store.config.validation
 
 		// Validate entries
 		let error;
-		if (!identity) {
-			error = "please enter your podium @ identity"
+		if (!alias) {
+			error = "please enter your podium @ alias"
 		} else if (
-				identity < val.identity.minLength ||
-				identity > val.identity.maxLength
+				alias < val.alias.minLength ||
+				alias > val.alias.maxLength
 			) {
-			error = "invalid identity"
+			error = "invalid alias"
 		} else if (!passphrase) {
 			error = "please enter your passphrase"
 		} else if (
@@ -111,8 +111,7 @@ class SignIn extends Page {
 		} else {
 
 			// Create sign-in task
-			let task = this.props.store.session
-				.signIn(null, identity, passphrase)
+			let task = this.session.signIn(alias, passphrase)
 
 			// Navigate to welcome screen
 			this.props.navigation.navigate(
@@ -120,7 +119,7 @@ class SignIn extends Page {
 				{
 					task: {
 						promise: task,
-						message: `Signing in @${identity}`
+						message: `Signing in @${alias}`
 					}
 				}
 			)
@@ -168,19 +167,19 @@ class SignIn extends Page {
 
 				<TextInput
 
-					ref={ref => { this.identity = ref }}
+					ref={ref => { this.alias = ref }}
 
 					style={styles.input.oneLine}
 					autoFocus={true}
 					autoCorrect={false}
 					autoCapitalize="none"
 					
-					onChangeText={this.typeIdentity}
-					value={this.state.identity.length > 0 ?
-						`@${this.state.identity}` :
+					onChangeText={this.typeAlias}
+					value={this.state.alias.length > 0 ?
+						`@${this.state.alias}` :
 						""
 					}
-					placeholder="@identity"
+					placeholder="@alias"
 
 					returnKeyType="next"
 					onSubmitEditing={() => this.passphrase.focus()}

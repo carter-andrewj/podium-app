@@ -45,7 +45,7 @@ class RegisterIdentity extends Page {
 
 	type(id) {
 		const identity = id.trim()
-			.replace(this.props.store.config.validation.identity.chars, "")
+			.replace(this.props.store.config.validation.alias.chars, "")
 		this.updateState(
 			state => state
 				.set("value", identity)
@@ -72,8 +72,8 @@ class RegisterIdentity extends Page {
 				let identity = this.state.value
 
 				// Unpack config
-				const minLength = this.props.store.config.validation.identity.minLength;
-				const maxLength = this.props.store.config.validation.identity.maxLength;
+				const minLength = this.props.store.config.validation.alias.minLength;
+				const maxLength = this.props.store.config.validation.alias.maxLength;
 
 				// Ignore empty IDs
 				if (identity.length === 0 && !forced) {
@@ -110,12 +110,12 @@ class RegisterIdentity extends Page {
 								// Update state
 								this.updateState(
 									state => state.set("validating", true),
-									() => this.props.store.users
-										.is(identity)
+									() => this.props.store.session
+										.search(identity)
 										.then(result => {
 											if (this.state.value !== identity) {
 												resolve()
-											} else if (result) {
+											} else if (result && result.length > 0) {
 												this.updateState(
 													state => state
 														.set("validating", false)
@@ -197,7 +197,7 @@ class RegisterIdentity extends Page {
 					`@${this.state.value}` :
 					""
 				}
-				placeholder="@identity"
+				placeholder="@alias"
 
 				returnKeyType="next"
 				onSubmitEditing={this.submit}

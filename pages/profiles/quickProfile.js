@@ -66,7 +66,7 @@ class QuickProfile extends Component {
 
 
 	render() {
-		const profile = this.props.store.session.user
+		const profile = this.activeUser.profile
 		return <View style={[
 				styles.quickProfile.container,
 				{
@@ -85,7 +85,7 @@ class QuickProfile extends Component {
 							<View style={styles.quickProfile.pictureHolder}>
 								<Image
 									style={styles.quickProfile.picture}
-									source={profile.picture}
+									source={this.activeUser.profile.picture}
 								/>
 							</View>
 						</View>
@@ -94,10 +94,10 @@ class QuickProfile extends Component {
 
 							<View style={styles.quickProfile.header}>
 								<Text style={styles.profile.name}>
-									{profile.name}
+									{this.activeUser.profile.displayName}
 								</Text>
 								<Text style={styles.profile.identity}>
-									{profile.identity}
+									{this.activeUser.alias}
 								</Text>
 							</View>
 
@@ -119,13 +119,13 @@ class QuickProfile extends Component {
 											: null
 									}
 									style={styles.quickProfile.bio}>
-									{profile.bio}
+									{this.activeUser.profile.bio}
 								</Text>
 								<Text
 									onLayout={this.setHeight}
 									pointerEvents="none"
 									style={styles.quickProfile.dummy}>
-									{profile.bio}
+									{this.activeUser.profile.bio}
 								</Text>
 							</ScrollView>
 

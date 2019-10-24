@@ -20,12 +20,16 @@ const loader = {
 class Root extends Component {
 
 	constructor() {
+
 		super()
+
 		this.state = {
 			status: "loading"
 		}
+
 		this.rotator = new Animated.Value(0)
 		this.spinGlyph = this.spinGlyph.bind(this)
+		
 	}
 
 
@@ -78,50 +82,45 @@ class Root extends Component {
 		// Load Fonts
 		Promise
 			.all([
-				this.props.store.loadFonts(),
-				this.props.store.loadLedger(),
-				this.props.store.loadAccounts(),
-				//new Promise(resolve => setTimeout(resolve, loader.duration))
+				this.store.loadAccounts(),
+				this.store.loadNation(),
+				this.store.loadFonts(),
 			])
-			.then(([font, ledger, credentials]) => {
+			.then(([ credentials ]) => {
 
 				// Check if existing credentials were found
-				if (credentials) {
+				if (credentials && credentials.nation === this.nation.name) {
+
+					// Unpack credentials
+					const { keyPair, passphrase } = credentials
 
 					// Generate a sign-in task
-					let signIn = this.props.store.session
-						.signIn(
-							credentials.keyPair,
-							credentials.identity,
-							credentials.passphrase
-						)
+					let signIn = this.session
+						.keyIn(keyPair, passphrase)
 
 					// Navigate to welcome screen
-					this.props.navigation.navigate(
+					this.navigate(
 						"Welcome",
 						{
 							task: {
 								promise: signIn,
-								message: `Signing In @${credentials.identity}`
+								message: `Signing In`
 							}
 						}
 					)
 
 				// Otherwise, load the lobby
 				} else {
-					this.props.navigation.navigate("Register")
+					this.navigate("Register")
 				}
 
 			})
-			.catch(error => {
-				console.error(error)
-				this.updateState(
-					state => state
-						.set("error", error)
-						.set("status", "error"),
-					() => this.props.navigation.navigate("Register")
-				)
-			})
+			.catch(error => this.updateState(
+				state => state
+					.set("error", error)
+					.set("status", "error"),
+				() => this.navigate("Register")
+			))
 	
 	}
 
@@ -143,18 +142,6 @@ class Root extends Component {
 					source={require("../assets/glyph.png")}
 				/>
 			</View>
-
-			{this.props.store.loaded && this.props.store.session.identity ?
-				<View>
-					<Text style={[styles.text.title, styles.text.white]}>
-						Welcome Back
-					</Text>
-					<Text style={[styles.text.subtitle, styles.text.white]}>
-						{`@${this.props.store.api.identity}`}
-					</Text>
-				</View>
-				: null
-			}
 
 		</Screen>
 	}

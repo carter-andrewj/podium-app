@@ -4,7 +4,7 @@ import { View, ScrollView, Text, TextInput,
 		 Image, Dimensions } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
-import { List } from 'immutable';
+import { List, Map, fromJS } from 'immutable';
 
 import settings from '../../settings';
 import styles from '../../styles/styles';
@@ -62,30 +62,75 @@ class CreatePost extends Page {
 		super()
 
 		this.state = {
+
+			// Post text
 			postRaw: "",
 			postRich: [],
+
+			// Post references
+			references: {},
+
+			// Post cost
 			cost: 0,
+
+			// Tracking position
 			cursor: -1,
+			selected: null,
 			atEnd: true,
 			scrollLock: true,
-			visibleHeight: Dimensions.get("window").height,
+
+			// Dimension scaling
+			visibleHeight: Dimensions.get("window").height -
+				styles.layout.mainHeader.minHeight,
+			keyboardHeight: 0,
+			fullHeight: 0,
+			bodyHeight: styles.post.bodyText.minHeight,
+			contentHeight: styles.post.bodyText.minHeight +
+				styles.post.bodyText.padding,
+			referenceHeight: 0,
+
+			// Loading state
 			sending: false
+
 		}
+
+		this.mounted = true
 
 		this.input = null
 		this.scroll = null
 
+		this.validationTimer = null
+		this.searchTimer = null
+
 		this.typePost = this.typePost.bind(this)
-		this.selectPost = this.selectPost.bind(this)
-		this.sendPost = this.sendPost.bind(this)
-		this.savePost = this.savePost.bind(this)
 		this.clearPost = this.clearPost.bind(this)
+
+		this.selectPost = this.selectPost.bind(this)
+		this.getSelected = this.getSelected.bind(this)
+		
+		this.search = this.search.bind(this)
+
+		this.validatePost = this.validatePost.bind(this)
+		this.validateIdentity = this.validateIdentity.bind(this)
+		this.validateTopic = this.validateTopic.bind(this)
+		this.validatePod = this.validatePod.bind(this)
+		this.validateURL = this.validateURL.bind(this)
+
+		// this.canPost = this.canPost.bind(this)
+		this.sendPost = this.sendPost.bind(this)
+
+		this.savePost = this.savePost.bind(this)
 
 		this.onKeyboard = this.onKeyboard.bind(this)
 		this.resize = this.resize.bind(this)
 		this.scrollToEnd = this.scrollToEnd.bind(this)
 
 	}
+
+
+
+
+// SETUP
 
 	pageWillFocus() {
 		this.props.screenProps.setBanner(
@@ -112,7 +157,16 @@ class CreatePost extends Page {
 		)
 	}
 
+
+
+
+
+// POST EDITING
+
 	typePost(post) {
+
+		// Stop pending validations
+		clearTimeout(this.validationTimer)
 
 		// Get pricing
 		const costs = this.props.store.config.postCosts
@@ -120,6 +174,14 @@ class CreatePost extends Page {
 
 		// Find urls
 		const urls = post.match(settings.regex.url) || []
+
+		// Get current references
+		let newRef = false;
+		let references = Map(this.state.references)
+			.map(r => {
+				r.active = false
+				return r
+			})
 
 		// Process rest of text
 		const formatted = List(post.split(settings.regex.url))
@@ -135,21 +197,45 @@ class CreatePost extends Page {
 					.filter((t, i) => i === 0 || t.length > 0)
 					.push("")
 					.map(text => {
+
+						// Calculate cost
 						cost += text.length * costs.perCharacter
+
+						// Add to output
 						return {
 							type: "text",
 							content: text,
 							cost: text.length * costs.perCharacter
 						}
+
 					})
 					.interleave(List(tags)
 						.map(tag => {
+
+							// Calculate cost
 							cost += costs.tag
+
+							// Add to references
+							if (references.get(tag)) {
+								references = references
+									.setIn([tag, "active"], true)
+							} else {
+								newRef = true
+								references = references.set(tag, Map({
+									type: tag.slice(0, 1),
+									loading: false,
+									valid: undefined,
+									active: true
+								}))
+							}
+
+							// Add to output
 							return {
 								type: tag.slice(0, 1),
 								content: tag,
 								cost: costs.tag
 							}
+
 						})
 						.push(spacer)
 					)
@@ -157,33 +243,139 @@ class CreatePost extends Page {
 			})
 			.interleave(List(urls)
 				.map(url => {
+
+					// Calculate cost
 					cost += costs.url
+
+					// Add to references
+					if (references.get(tag)) {
+						references = references
+							.setIn([tag, "active"], true)
+					} else {
+						newRef = true
+						references = references.set(url, Map({
+							type: "url",
+							loading: false,
+							valid: undefined,
+							active: true
+						}))
+					}
+
+					// Add to output
 					return {
 						type: "url",
 						content: url,
 						cost: costs.url
 					}
+
 				})
 				.push(spacer)
 			)
 			.flatten()
 
-		// Get cursor location
-		const cursor = this.state.cursor - 1
-		let selection
+
+		// Update cursor position
+		const cursor = this.state.cursor + 1
+		const selected = this.getSelected(formatted.toJS(), cursor)
+
+		// Update state
+		this.updateState(
+			state => state
+				.set("postRaw", post)
+				.set("postRich", formatted)
+				.set("cursor", cursor)
+				.set("selected", selected)
+				.set("cost", cost)
+				.set("references", references),
+			() => {
+				if (newRef) {
+					this.resize()
+				} else {
+					this.scrollToEnd()
+				}
+				this.validationTimer = setTimeout(this.validatePost, 1000)
+			}
+		)
+
+	}
+
+
+	// Remove all content from the post and start fresh
+	clearPost() {
+		this.updateState(state => state
+			.set("postRaw", "")
+			.set("postRich", [])
+			.set("cursor", -1)
+			.set("selected", null)
+			.set("cost", 0)
+			.set("references", {})
+		)
+	}
+
+
+
+
+
+// SELECTION
+
+	// Identify the current cursor position in the post
+	// and, if applicable, the section of text selected
+	selectPost(event) {
+
+		// Get current and new cursor position
+		const selection = event.nativeEvent.selection
+
+		// Check if cursor is at end of input
+		const atEnd = (this.state.postRaw.length) >= selection.end - 1
+
+		// Identify selected content
+		const selected = this.getSelected(this.state.postRich, selection.end)
+
+		// Ignore cursor if content is selected
+		if (selection.end === selection.start) {
+			this.updateState(state => state
+				.set("cursor", selection.end)
+				.set("selected", selected)
+				.set("atEnd", atEnd),
+			)
+		} else if (this.state.cursor !== -1) {
+			this.updateState(state => state
+				.set("cursor", -1)
+				.set("selected", null)
+				.set("atEnd", atEnd),
+			)
+		}
+
+	}
+
+
+	// Identify the current element of text selected
+	getSelected(text, cursor) {
+
+		// Adjust cursor location to identify previous
+		// selection when at the end of an element (i.e.
+		// in this example, we want to identify the
+		// preceding @-tag as the selected item, not
+		// the following space:
+		//
+		// "Post with @identity| included."
+		//
+		// where | = cursor
+		cursor = cursor - 1
 
 		// Find cursor, if no text selected
+		let selected
 		if (cursor >= 0) {
 			let start = 0
 			let end = 0
 			let i = 0
-			while (!selection && i < formatted.size) {
+			while (!selected && i < text.size) {
 
 				// Get post section
-				const current = formatted.get(i)
+				const current = text.get(i)
 
 				// Ignore spacers
-				if (current.content.length > 0) {	
+				if (current.content.length > 0) {
 
 					// Locate start and end of post section
 					start = end
@@ -191,7 +383,10 @@ class CreatePost extends Page {
 
 					// Check if cursor is within current
 					if (cursor >= start && cursor < end) {
-						selection = current
+
+						// Set selection
+						selected = current
+
 					}
 
 				}
@@ -202,117 +397,279 @@ class CreatePost extends Page {
 			}
 		}
 
-		// Update state
-		this.updateState(
-			state => state
-				.set("postRaw", post)
-				.set("postRich", formatted)
-				.set("selection", selection)
-				.set("cost", cost),
-			this.scrollToEnd
-		)
+		// Check if a reference is selected
+		if (selected && ["@", "#", "/"].includes(selected.type)) {
 
-	}
+			// Trigger a search
+			this.search(selected)
 
+			// Return the selected content
+			return selected
 
-	selectPost(event) {
-
-		// Get current and new cursor position
-		const selection = event.nativeEvent.selection
-
-		// Check if cursor is at end of input
-		const atEnd = (this.state.postRaw.length + 1) === selection.end
-
-		// Ignore cursor if content is selected
-		if (selection.end === selection.start) {
-			this.updateState(
-				state => state
-					.set("cursor", selection.end)
-					.set("atEnd", atEnd),
-				() => this.typePost(this.state.postRaw)
-			)
-		} else if (this.state.cursor !== -1) {
-			this.updateState(
-				state => state
-					.set("cursor", -1)
-					.set("atEnd", atEnd),
-				() => this.typePost(this.state.postRaw)
-			)
+		// Otherwise, return nothing
+		} else {
+			return null
 		}
 
 	}
 
 
-	sendPost() {
-		this.updateState(
-			state => state.set("sending", true),
-			() => this.props.store.session
-				.sendPost({
-					text: this.state.postRaw,
-					references: {},
-					media: {},
-					parent: this.props.parent
-				})
-				.then(() => this.updateState(
-					state => state.set("sending", false),
-					() => this.props.navigation.goBack(null)
-				))
-				.catch(console.error)
-		)
+
+
+
+// SEARCH
+
+	search(reference) {
+		console.log("searching", reference)
 	}
+
+
+
+
+// VALIDATION
+
+	// Validate any references in the post that have yet
+	// to be validated
+	validatePost() {
+
+		// Identify references requiring validation
+		let unvalidated = Map(this.state.references)
+			.filter(r => r.valid === undefined && !r.loading)
+
+		// Check if any validations are required
+		if (unvalidated.size > 0) {
+
+			// Update state
+			this.updateState(
+
+				// Track active validations
+				state => state.update("references",
+					refs => fromJS(refs).map((r, k) => r
+						.update("loading", l => unvalidated.get(k) ? true : l)
+					)
+				),
+
+				// Perform validations
+				() => unvalidated.map((reference, text) => {
+
+					// Perform validation
+					new Promise(
+						(resolve, reject) => { switch (reference.type) {
+
+							// Validate mentions
+							case "@":
+								this.validateIdentity(text)
+									.then(resolve)
+									.catch(reject)
+								break;
+
+							// Validate topics
+							case "#":
+								this.validateTopic(text)
+									.then(resolve)
+									.catch(reject)
+								break;
+
+							// Validate groups
+							case "/":
+								this.validatePod(text)
+									.then(resolve)
+									.catch(reject)
+								break;
+
+							// Validate urls
+							case "url":
+								this.validateURL(text)
+									.then(resolve)
+									.catch(reject)
+								break;
+
+							// Reject unknown refs
+							default: reject(new Error(
+								`Unknown post reference type: ${reference.type}`
+							))
+
+						}})
+						.then(result => this.updateState(state => state
+							.setIn(["references", text, "loading"], false)
+							.setIn(["references", text, "valid"], result)
+						))
+						.catch(console.error)
+				
+				})
+
+			)
+
+		}
+
+	}
+
+
+	validateIdentity(identity) {
+		return new Promise((resolve, reject) => {
+			this.props.store.users
+				.is(identity.slice(1))
+				.then(found => {
+
+					// Return the result
+					resolve(found)
+
+					// If found, pre-emptively load the
+					// user's profile data
+					if (found) {
+						this.props.store.users
+							.add(found)
+							.load("profile")
+							.catch(console.error)
+					}
+
+				})
+				.catch(reject)
+		})
+	}
+
+
+	validateTopic(topic) {
+		return new Promise((resolve, reject) => {
+			setTimeout(() => resolve(true), 2000)
+		})
+	}
+
+
+	validatePod(pod) {
+		return new Promise((resolve, reject) => {
+			setTimeout(() => resolve(true), 2000)
+		})
+	}
+
+
+	validateURL(url) {
+		return new Promise((resolve, reject) => {
+			setTimeout(() => resolve(true), 2000)
+		})
+	}
+
+
+
+
+
+
+// POST SUBMISSION
+
+	get canPost() {
+
+		// Can the user afford to post?
+		return this.state.cost < this.props.store.session.user.pdmBalance
+
+		// Are all post references valid?
+			&& this.state.references
+				.reduce((l, n) => l && (!n.active || n.valid), true)
+
+		// Is the user under a sanction preventing them from posting?
+			&& true
+
+	}
+
+	sendPost() {
+		if (this.canPost) {
+			this.updateState(
+				state => state.set("sending", true),
+				() => this.props.store.session
+					.sendPost({
+						text: this.state.postRaw,
+						references: {},
+						media: {},
+						parent: this.props.parent
+					})
+					.then(() => this.updateState(
+						state => state.set("sending", false),
+						() => this.props.navigation.goBack(null)
+					))
+					.catch(console.error)
+			)
+		}
+	}
+
+
+
+
+
+// DRAFTS
 
 	savePost() {
 		console.log("saved to drafts")
 	}
 
-	clearPost() {
-		this.updateState(state => state
-			.set("postRaw", "")
-			.set("postRich", [])
-			.set("cursor", -1)
-			.set("cost", 0)
-		)
-	}
 
 
+
+
+
+// LAYOUT CONTROL
 
 	onKeyboard(height) {
-		this.updateState(state => state
-			.set("visibleHeight", height)
+		this.updateState(
+			state => state.set("keyboardHeight", height + 44),
+			this.resize
 		)
 	}
 
-	resize({ nativeEvent }) {
 
-		// Get height of components
-		const view = this.state.visibleHeight
-		const header = styles.post.header.minHeight
-		const footer = styles.newPost.footer.minHeight
+	resize(event) {
+
+		// Get visible height
+		const screenHeight = Dimensions.get("window").height
+		const keyboardHeight = this.state.keyboardHeight
+		const footerHeight = styles.newPost.footer.minHeight
+		const headerHeight = styles.layout.mainHeader.minHeight
+		const viewHeight = screenHeight - headerHeight - footerHeight - keyboardHeight
+
+		// Get content height
+		const titleHeight = styles.post.header.minHeight
 		const margin = styles.post.columnMiddle.margin
-		const input = nativeEvent.contentSize.height + (2.0 * margin)
+		const refHeight = styles.newPost.reference.minHeight *
+			Map(this.state.references).filter(r => r.active).size
+
+		// Calculate input height
+		let inputHeight;
+		if (event) {
+			console.log(event.nativeEvent.contentSize.height)
+			inputHeight = Math.round(event.nativeEvent.contentSize.height + (2 * margin) + 2)
+		} else {
+			inputHeight = this.state.inputHeight
+		}
 
 		// Calculate height
 		let lock;
 		let height;
-		const textHeight = input + header + (2.0 * margin)
-		const viewHeight = view - footer
-		if (textHeight > viewHeight) {
+		let bodyHeight = inputHeight + titleHeight
+		const contentHeight = bodyHeight + refHeight
+		if (contentHeight > viewHeight) {
 			lock = false
-			height = textHeight
+			height = contentHeight
 		} else {
 			lock = true
 			height = viewHeight
+			inputHeight = Math.max(
+				inputHeight,
+				Math.round(viewHeight - titleHeight - refHeight - (2 * margin))
+			)
+			bodyHeight = inputHeight + titleHeight
 			if (!this.state.scrollLock) {
 				this.scroll.scrollTo({ y: 0 })
 			}
 		}
 
+		console.log("size", inputHeight, bodyHeight, refHeight, height)
+
 		// Set new minimum view height
 		this.updateState(
 			state => state
 				.set("scrollLock", lock)
-				.set("content", input)
-				.set("height", height),
+				.set("inputHeight", inputHeight)
+				.set("bodyHeight", bodyHeight)
+				.set("referenceHeight", refHeight)
+				.set("fullHeight", height),
 			this.scrollToEnd
 		)
 
@@ -321,16 +678,17 @@ class CreatePost extends Page {
 
 	scrollToEnd() {
 		if (!this.state.scrollLock && this.state.atEnd) {
-			this.scroll.scrollToEnd()
+			this.scroll.scrollTo({ y: this.state.bodyHeight})
 		}
 	}
 
 
 
+
+
+// RENDER
+
 	render() {
-
-		const selection = this.state.selection
-
 		return <KeyboardView
 			onChange={this.onKeyboard}
 			offset={styles.layout.mainHeader.minHeight}
@@ -339,17 +697,22 @@ class CreatePost extends Page {
 			<ScrollView
 				ref={ref => this.scroll = ref}
 				contentContainerStyle={{
-					minHeight: this.state.height,
-					maxHeight: this.state.height,
+					minHeight: this.state.fullHeight,
+					maxHeight: this.state.fullHeight,
 				}}
 				scrollEnabled={!this.state.scrollLock}
 				showVerticalScrollIndicator={false}
 				showHorizontalScrollIndicator={false}
-				keyboardDismissMode="on-drag"
-				keyboardShouldPersistTaps="handled"
+				keyboardShouldPersistTaps="always"
 				vertical={true}>
 
-				<View style={styles.post.columnMiddle}>
+				<View style={[
+						styles.post.columnMiddle,
+						{
+							minHeight: this.state.bodyHeight,
+							maxHeight: this.state.bodyHeight,
+						}
+					]}>
 
 					<View style={styles.post.coreLeft}>
 						<View style={styles.post.profilePictureHolder}>
@@ -386,7 +749,10 @@ class CreatePost extends Page {
 
 								<View style={[
 										styles.newPost.output,
-										{ minHeight: this.state.content }
+										{
+											minHeight: this.state.inputHeight,
+											maxHeight: this.state.inputHeight,
+										}
 									]}>
 									<Text>
 										{this.state.postRich.map((f, i) => {
@@ -413,7 +779,10 @@ class CreatePost extends Page {
 
 									style={[
 										styles.newPost.input,
-										{ minHeight: this.state.content }
+										{
+											minHeight: this.state.inputHeight,
+											maxHeight: this.state.inputHeight
+										}
 									]}
 									autoFocus={true}
 									autoCorrect={true}
@@ -450,14 +819,40 @@ class CreatePost extends Page {
 
 				</View>
 
+				<View style={[
+						styles.newPost.referenceHolder,
+						{
+							minHeight: this.state.referenceHeight,
+							maxHeight: this.state.referenceHeight,
+						}
+					]}>
+					{Map(this.state.references)
+						.filter(r => r.active)
+						.map((reference, key) => {
+							return <View
+								key={key}
+								style={styles.newPost.reference}>
+								{reference.loading || reference.valid === undefined ?
+									<Text>Loading...</Text>
+								: reference.valid ?
+									<Text>Found</Text>
+								:
+									<Text>Not found</Text>
+								}
+							</View>
+						})
+						.toList()
+					}
+				</View>
+
 			</ScrollView>
 
 			<View style={styles.newPost.footer}>
 
 				<View style={styles.containerRow}>
-					{(selection && selection.type !== "text") ?
+					{this.state.selected ?
 						<Text>
-							Selected: {selection.content}
+							Selected: {this.state.selected.content}
 						</Text>
 					: this.state.sending ?
 						<Text>
@@ -474,6 +869,16 @@ class CreatePost extends Page {
 
 		</KeyboardView>
 
+	}
+
+
+
+// CLEAN UP
+
+	pageWillUnmount() {
+		this.mounted = false
+		clearTimeout(this.validationTimer)
+		clearTimeout(this.searchTimer)
 	}
 
 

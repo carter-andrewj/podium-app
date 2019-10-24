@@ -64,14 +64,14 @@ export default class Post {
 
 		this.load = this.load.bind(this)
 
-		this.content = new PostContent(this)
+		this.content = new PostContent(this, {})
 			.surface("created", "text", "author", "depth",
 					 "origin", "parent", "references", "media",
 					 "amendments", "retraction",
 					 "cost", "currency")
 
-		this.replyIndex = new PostReplies(this)
-		this.promotionIndex = new PostPromotions(this)
+		this.replyIndex = new PostReplies(this, [])
+		this.promotionIndex = new PostPromotions(this, [])
 
 		this.loadAuthor = this.loadAuthor.bind(this)
 		this.loadOrigin = this.loadOrigin.bind(this)
@@ -102,10 +102,10 @@ export default class Post {
 	@computed get amendments() { return this.content.amendments }
 	@computed get retraction() { return this.content.retraction }
 
-	@computed get replies() { return this.replyIndex.value || [] }
+	@computed get replies() { return this.replyIndex.value }
 	@computed get replyCount() { return formatNumber(this.replies.length)}
 
-	@computed get promotions() { return this.promotionIndex.value || [] }
+	@computed get promotions() { return this.promotionIndex.value }
 	@computed get promotionCount() { return formatNumber(this.promotions.length)}
 	@computed get promotedWithPDM() {
 		return this.promotions

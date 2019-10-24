@@ -322,7 +322,7 @@ class Core extends Page {
 	}
 
 	signOut() {
-		this.props.store.session
+		this.session
 			.signOut()
 			.then(() => this.props.navigation.navigate("SignIn"))
 			.catch(console.error)

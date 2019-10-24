@@ -110,16 +110,23 @@ class RegisterBio extends Page {
 					// Unpack params
 					const params = this.props.navigation.state.params
 
+
+
 					// Set profile data
 					let task = new Promise((resolve, reject) => {
 						params.task.promise
-							.then(() => this.props.store.session
-								.updateProfile({
+							.then(() => {
+								console.log("SUBMITTTED")
+								console.log(this.activeUser)
+								console.log(this.activeUser.profile)
+								return this.activeUser
+								.profile
+								.update({
 									name: params.name,
-									bio: this.state.value,
+									about: this.state.value,
 									picture: params.picture
 								})
-							)
+							})
 							.then(resolve)
 							.catch(reject)
 					})

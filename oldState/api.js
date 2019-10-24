@@ -66,9 +66,12 @@ export default class API {
 	}
 
 
-	search(terms, onUpdate) {
+	search(terms, among, onUpdate) {
 		return new Promise((resolve, reject) => {
-			this.task("search", terms)
+			this.task("search", {
+					terms: terms,
+					among: among
+				})
 				.subscribe(onUpdate)
 				.then(({ results }) => resolve(results))
 				.catch(reject)

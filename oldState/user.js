@@ -104,22 +104,22 @@ export default class User {
 
 		this.load = this.load.bind(this)
 
-		this.profile = new UserProfile(this)
+		this.profile = new UserProfile(this, {})
 		this.profile.surface("id", "name", "bio",
 			"picture", "pictureType", "created")
 		
-		this.postIndex = new UserPosts(this)
-		this.topicIndex = new UserTopics(this)
+		this.postIndex = new UserPosts(this, [])
+		this.topicIndex = new UserTopics(this, [])
 
-		this.PDMIndex = new UserPDM(this)
-		this.ADMIndex = new UserADM(this)
+		this.PDMIndex = new UserPDM(this, [])
+		this.ADMIndex = new UserADM(this, [])
 
-		this.followerIndex = new UserFollowers(this)
-		this.followingIndex = new UserFollowing(this)
+		this.followerIndex = new UserFollowers(this, [])
+		this.followingIndex = new UserFollowing(this, [])
 
-		this.integrityIndex = new UserIntegrity(this)
-		this.rightsIndex = new UserRights(this)
-		this.sanctionIndex = new UserSanctions(this)
+		this.integrityIndex = new UserIntegrity(this, [])
+		this.rightsIndex = new UserRights(this, [])
+		this.sanctionIndex = new UserSanctions(this, [])
 
 	}
 
@@ -140,7 +140,7 @@ export default class User {
 	}
 
 	@computed get posts() { return this.postIndex.value }
-	@computed get topics() { return this.topicIndex.value }
+	@computed get topics() { return this.topicIndex.value  }
 
 	@computed get transactionsPDM() { return this.PDMIndex.value }
 	@computed get PDM() {
@@ -155,9 +155,12 @@ export default class User {
 	@computed get followers() { return this.followerIndex.value }
 	@computed get following() { return this.followingIndex.value }
 
+	@computed get affinity() { return Math.random() }
+
 	@computed get integrityHistory() { return this.integrityIndex.value }
 	@computed get integrity() {
-		return this.integrityHistory.reduce((t, x) => t * (1.0 + x), 0.5)
+		return Math.random()
+	//	return this.integrityHistory.reduce((t, x) => t * (1.0 + x), 0.5)
 	}
 
 	@computed get rights() { return this.rightsIndex.value }

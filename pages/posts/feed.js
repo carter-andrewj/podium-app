@@ -74,7 +74,7 @@ class Feed extends Page {
 					<View style={styles.feed.noticeBackground}>
 						<FontAwesomeIcon
 							icon="chevron-up"
-							size={100}
+							size={90}
 							color={settings.colors.white}
 						/>
 					</View>
@@ -103,13 +103,13 @@ class Feed extends Page {
 
 
 	header() {
-		const pending = this.props.store.posts.pending
+		const pending = this.session.feed.pending
 		return pending > 0 ?
 			<View
 				key="feed-header"
 				style={styles.feed.button}>
 				<TouchableOpacity
-					onPress={this.props.store.posts.publish}
+					onPress={this.session.publish}
 					style={styles.container}>
 					<Text style={styles.feed.buttonText}>
 						{`show ${pending} new posts`}
@@ -191,8 +191,8 @@ class Feed extends Page {
 				ListFooterComponent={this.footer}
 				ItemSeparatorComponent={this.spacer}
 
-				data={this.props.store.posts.feed}
-				extraData={this.props.store.posts.pending}
+				data={this.session.feed.all}
+				extraData={this.session.feed.pending}
 				initialNumToRender={5}
 
 				renderItem={this.thread}

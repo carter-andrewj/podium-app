@@ -30,10 +30,14 @@ const headerHeight = Math.round(screenHeight * layout.postHeader)
 const reactorWidth = Math.round(screenWidth * layout.postReactor)
 
 const postHeight = headerHeight + (2 * buttonSize) + (4 * margin)
+const bodyHeight = Math.round(postHeight - (1.5 * margin))
+
+const gaugeHeight = Math.round((postHeight - overlap - (3 * margin)) * 0.5)
 
 const contentWidth = screenWidth - (2 * overlap) - (4 * margin)
 const contentHeight = (2 * buttonSize) + margin
 
+const edgeWidth = Math.round((overlap * 0.5) + margin)
 
 
 
@@ -41,6 +45,7 @@ const contentHeight = (2 * buttonSize) + margin
 
 const column = {
 	...general.container,
+	flexDirection: "row",
 	alignItems: "flex-start",
 	margin: margin,
 }
@@ -75,15 +80,49 @@ const post = StyleSheet.create({
 		backgroundColor: settings.colors.white
 	},
 
+
+
+
 	columnLeft: {
 		...wing,
 		marginRight: 0,
-		backgroundColor: "pink"
 	},
+
+	leftEdge: {
+		...general.container,
+		minHeight: bodyHeight,
+		maxHeight: bodyHeight,
+		minWidth: edgeWidth,
+		maxWidth: edgeWidth,
+		justifyContent: "space-between",
+		paddingTop: Math.round(margin * 0.5),
+		paddingBottom: Math.round(margin * 0.5),
+	},
+
+	left: {
+		...general.container,
+		alignItems: "stretch",
+		justifyContent: "flex-start",
+		width: "100%",
+		minHeight: bodyHeight,
+		maxHeight: bodyHeight,
+		paddingLeft: margin,
+		paddingRight: margin,
+	},
+
+	bio: {
+		...text.body,
+		width: "100%",
+		minHeight: contentHeight - margin,
+		fontSize: settings.fontsize.smaller,
+		padding: Math.round(margin * 0.5),
+	},
+
+
+
 
 	columnMiddle: {
 		...column,
-		flexDirection: "row",
 		justifyContent: "space-between",
 		minWidth: postWidth,
 		maxWidth: postWidth,
@@ -107,12 +146,30 @@ const post = StyleSheet.create({
 		width: overlap,
 		height: overlap,
 		borderBottomRightRadius: Math.round(layout.corner * overlap),
-		overflow: "hidden"
+		overflow: "hidden",
+		marginBottom: Math.round(margin * 0.5),
 	},
 
 	profilePicture: {
 		width: "100%",
 		height: "100%"
+	},
+
+	gauge: {
+		...general.containerRow,
+		justifyContent: "space-evenly",
+		minHeight: gaugeHeight,
+		maxHeight: gaugeHeight,
+		minWidth: overlap,
+		maxWidth: overlap,
+		marginTop: Math.round(margin * 0.5),
+		borderRadius: gaugeHeight
+	},
+
+	gaugeText: {
+		...text.title,
+		color: settings.colors.white,
+		fontSize: settings.fontsize.tiny,
 	},
 
 

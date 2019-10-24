@@ -105,10 +105,7 @@ class QuickSearch extends Component {
 
 					// Search
 					() =>  this.props.store.api
-						.search({
-							target: target,
-							among: this.state.searchFilter
-						})
+						.search(target, this.state.searchFilter)
 						.then(result => this.updateState(state => state
 							.update("loading", l => l - 1)
 							.update("results", current => 

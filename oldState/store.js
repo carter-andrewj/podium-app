@@ -4,7 +4,9 @@ import { Permissions } from 'expo';
 import * as SecureStore from 'expo-secure-store';
 import * as Font from 'expo-font';
 
-import Nation from './nation';
+import API from './api';
+import UserStore from './userStore';
+import PostStore from './postStore';
 import Session from './session';
 
 
@@ -13,7 +15,7 @@ export default class Store {
 
 	@observable load = {
 		fonts: false,
-		nation: false,
+		ledger: false,
 		accounts: false
 	}
 
@@ -34,7 +36,7 @@ export default class Store {
 
 		validation: {
 			delay: 1000,
-			alias: {
+			identity: {
 				minLength: 1,
 				maxLength: 20,
 				chars: /[^A-Z0-9_-]/i
@@ -66,10 +68,12 @@ export default class Store {
 
 	constructor() {
 
-		this.nation = new Nation(this)
+		this.api = new API(this)
+		this.users = new UserStore(this)
+		this.posts = new PostStore(this)
 		this.session = new Session(this)
 
-		this.loadNation = this.loadNation.bind(this)
+		this.loadLedger = this.loadLedger.bind(this)
 
 		this.loadFonts = this.loadFonts.bind(this)
 
@@ -83,28 +87,14 @@ export default class Store {
 
 
 
-
-// LOADING
-
-	@computed get loaded() {
-		return this.load.fonts
-			&& this.load.nation
-			&& this.load.accounts
-	}
-
-
-
-
-// LEDGER
-
-	loadNation() {
-		if (this.load.nation) {
+	loadLedger() {
+		if (this.load.ledger) {
 			return new Promise(resolve => resolve())
 		} else {
 			return new Promise((resolve, reject) => {
-				this.nation.connect()
+				this.api.connect()
 					.then(() => {
-						this.load.nation = true
+						this.load.ledger = true
 						resolve()
 					})
 					.catch(error => {
@@ -116,9 +106,6 @@ export default class Store {
 	}
 
 
-
-
-// FONTS
 
 	loadFonts() {
 		if (this.load.fonts) {
@@ -143,9 +130,6 @@ export default class Store {
 
 
 
-
-
-// ACCOUNTS
 
 	loadAccounts() {
 		if (this.load.accounts) {
@@ -190,16 +174,15 @@ export default class Store {
 	}
 
 
-	addAccount(address, keyPair, passphrase) {
+	addAccount(address, keyPair, identity, passphrase) {
 		return new Promise((resolve, reject) => {
 			this.accounts[address] = {
+				identity: identity,
 				keyPair: keyPair,
-				passphrase: passphrase,
-				nation: this.nation.name
+				passphrase: passphrase
 			}
 			SecureStore
 				.setItemAsync("accounts", JSON.stringify(toJS(this.accounts)))
-				.then(() => this.setAccount(address))
 				.then(resolve)
 				.catch(error => {
 					this.error = error
@@ -224,9 +207,6 @@ export default class Store {
 
 
 
-
-// PERMISSIONS
-
 	permitCamera() {
 		return new Promise((resolve, reject) => {
 			if (Platform.OS === "ios") {
@@ -242,5 +222,13 @@ export default class Store {
 	}
 
 
+
+
+
+	@computed get loaded() {
+		return this.load.fonts
+			&& this.load.ledger
+			&& this.load.accounts
+	}
 
 }

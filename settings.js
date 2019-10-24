@@ -108,8 +108,11 @@ const settings = {
 		postHeight: 0.15,		// Minimum height of a post (% of screen height)
 		postHeader: 0.03,		// Height of post header - name, @identity, etc.. (% of screen height)
 		postReactor: 0.3,		// Width of reactor element in post header (% of screen width)
-		postWing: 0.85,			// Width of post wings outside left/right side of screen (% of screen width)
-		postWingOverlap: 0.18	// Overlap of post wings with post core content (% of screen width)
+		postWing: 0.9,			// Width of post wings outside left/right side of screen (% of screen width)
+		postWingOverlap: 0.18,	// Overlap of post wings with post core content (% of screen width)
+
+		// Post Creation
+		refHeight: 0.1,			// Height of a post creation reference validator (% of screen width)
 
 	},
 
