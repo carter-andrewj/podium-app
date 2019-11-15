@@ -1,22 +1,13 @@
-import { Component as Comp } from 'react';
+import { Component as BaseComponent } from 'react';
 import { fromJS } from 'immutable'
 
 
-export default class Component extends Comp {
+export default class Component extends BaseComponent {
 
 	constructor() {
 		super()
+		this.navigate = this.navigate.bind(this)
 		this.updateState = this.updateState.bind(this)
-	}
-
-	updateState(fn, callback) {
-		this.setState(
-			last => {
-				let next = fromJS(last);
-				return fn(next).toJS()
-			},
-			callback
-		)
 	}
 
 
@@ -25,6 +16,10 @@ export default class Component extends Comp {
 	// Root app data store
 	get store() {
 		return this.props.store
+	}
+
+	get config() {
+		return this.store.config
 	}
 
 	// Nation
@@ -52,11 +47,23 @@ export default class Component extends Comp {
 	}
 
 
+
 // HELPERS
 
 	navigate(to, params) {
 		this.navigator.navigate(to, params)
 	}
+
+	updateState(fn, callback) {
+		this.setState(
+			last => {
+				let next = fromJS(last);
+				return fn(next).toJS()
+			},
+			callback
+		)
+	}
+
 
 
 }

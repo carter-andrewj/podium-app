@@ -1,42 +1,38 @@
+import { Constants } from 'expo';
 import { StyleSheet, Dimensions } from 'react-native';
 
 import settings from '../settings';
 import general from './general';
 import text from './text';
 import input from './input';
-import keyboard from './keyboard';
 
 
 const layout = settings.layout
-
 const screenWidth = Dimensions.get("window").width
-const screenHeight = Dimensions.get("window").height
 
 const drawerWidth = Math.round(screenWidth * layout.drawerSize)
 const fullWidth = Math.round(screenWidth + (2.0 * drawerWidth))
 
-const headerSize = Math.round(screenHeight * layout.headerSize)
+const headerSize = Math.round(screenWidth * layout.headerSize)
 
 const margin = Math.round(screenWidth * layout.margin)
 
 
 
 
-const layoutOut = {
+const HUD = {
 
 	container: {
 		...general.container,
 		flexDirection: "row",
-		alignItems: "stretch",
-		height: screenHeight,
 		minWidth: fullWidth,
 		maxWidth: fullWidth,
 	},
 
 	leftDrawer: {
 		...general.container,
-		minWidth: drawerWidth - layout.border,
-		maxWidth: drawerWidth - layout.border,
+		minWidth: drawerWidth,
+		maxWidth: drawerWidth,
 		borderRightWidth: layout.border,
 		borderColor: settings.colors.neutralPalest,
 	},
@@ -48,14 +44,14 @@ const layoutOut = {
 	rightDrawer: {
 		...general.container,
 		justifyContent: "flex-start",
-		minWidth: drawerWidth - layout.border,
-		maxWidth: drawerWidth - layout.border,
+		minWidth: drawerWidth,
+		maxWidth: drawerWidth,
 		borderLeftWidth: layout.border,
 		borderColor: settings.colors.neutralPalest,
 	},
 
 	rightFooter: {
-		...keyboard.below,
+		...general.container,
 		borderTopWidth: layout.border,
 		borderColor: settings.colors.neutralPalest,
 	},
@@ -123,4 +119,4 @@ const layoutOut = {
 
 }
 
-export default layoutOut;
+export default HUD;

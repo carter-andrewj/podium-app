@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import Constants from 'expo-constants';
 
 import settings from '../settings';
 import general from './general';
@@ -8,60 +9,166 @@ import input from './input';
 
 
 
-const showButton = {
-	minWidth: 0.2 * Dimensions.get("window").width,
-	maxHeight: 0.06 * Dimensions.get("window").width,
-	marginRight: 0,
+const layout = settings.layout
+
+const screenWidth = Dimensions.get("window").width
+const screenHeight = Math.round(
+	(Dimensions.get("window").height - Constants.statusBarHeight) *
+	(1.0 - layout.lobbyFooter)
+)
+
+const margin = Math.round(screenWidth * layout.margin)
+const edge = Math.round(screenWidth * layout.screenMargin)
+
+const signInMargin = edge + margin
+
+const buttonSize = Math.round(screenWidth * layout.largeButton)
+const navSize = buttonSize + (2 * margin) 
+
+const inputHeight = Math.round(layout.inputHeight * screenWidth)
+const inputWidth = Math.round(screenWidth - (2.0 * edge))
+const multilineHeight = Math.round(layout.multilineHeight * screenWidth)
+
+const tosHeight = screenHeight - navSize - edge -
+	(4 * inputHeight) - (8 * margin)
+
+const insetWidth = inputWidth - (2 * edge)
+
+const imageCorner = Math.round(insetWidth * layout.corner)
+const imageButtonHeight = Math.round(0.5 * inputHeight)
+
+const thumbnailWidth = inputHeight - margin
+const thumbnailCorner = Math.round(thumbnailWidth * layout.corner)
+
+
+
+const button = {
+	...general.container,
+	flex: 0,
+	width: null,
+	padding: margin,
+	backgroundColor: settings.colors.major,
+	minHeight: buttonSize,
+	minWidth: buttonSize,
+	maxHeight: buttonSize,
+	borderRadius: buttonSize,
 }
 
+
+const overlayItem = {
+	...general.container,
+	alignSelf: "flex-end",
+	alignItems: "center",
+	minWidth: inputHeight,
+	maxWidth: inputHeight,
+}
 
 
 const lobby = StyleSheet.create({
 
-	container: {
+
+	body: {
 		...general.container,
-		backgroundColor: settings.colors.major
+		alignSelf: "stretch",
+		backgroundColor: settings.colors.white,
+		paddingTop: navSize,
 	},
 
-	header: {
+	container: {
 		...general.container,
-		position: "absolute",
-		flexDirection: "row",
-		top: 0.07 * Dimensions.get("window").height,
-		maxWidth: 0.8 * Dimensions.get("window").width,
-		alignItems: "stretch",
-		zIndex: 10
 	},
 
 	heading: {
 		...text.heading,
-		color: settings.colors.white
+		color: settings.colors.major,
+		paddingBottom: edge
 	},
 
 
 
 
-	showButton: showButton,
-
-	showAbove: {
-		...showButton,
-		transform: [
-			{ translateY: 0.01 * Dimensions.get("window").height }
-		]
+	nav: {
+		...general.container,
+		flexDirection: "row",
+		position: "absolute",
+		top: edge,
+		right: signInMargin,
+		left: signInMargin,
+		width: screenWidth - (2 * signInMargin),
 	},
 
-	showBelow: {
-		...showButton,
-		transform: [
-			{ translateY: -0.06 * Dimensions.get("window").height }
-		]
+	navButton: button,
+
+	signInButton: {
+		...button,
+		alignSelf: "flex-end"
 	},
 
-	showButtonText: {
-		padding: 0.01 * Dimensions.get("window").width,
+	registerButton: {
+		...button,
+		alignSelf: "flex-start"
+	},
+
+	navText: {
+		...text.body,
+		fontSize: settings.fontsize.smallish,
+		color: settings.colors.white,
+		padding: margin,
+		paddingTop: 0,
+		paddingBottom: 0,
+	},
+
+
+
+
+	inputContainer: {
+		...general.container,
+		justifyContent: "flex-start",
+		flexBasis: "auto",
+	},
+
+	inputWrapper: {
+		...general.container,
+		justifyContent: "center",
+		minHeight: inputHeight + margin,
+		marginBottom: margin
+	},
+
+	overlay: {
+		...general.container,
+		position: "absolute",
+		right: edge,
+		left: edge,
+		height: inputHeight,
+		width: inputWidth,
+	},
+
+	overlayItem: overlayItem,
+
+	overlayLeft: {
+		...overlayItem,
+		alignSelf: "flex-start",
+	},
+
+	overlayRight: {
+		...overlayItem,
+		alignSelf: "flex-end",
+	},
+
+	overlayMulti: {
+		...overlayItem,
+		alignSelf: "flex-end",
+		transform: [{ translateY: Math.round(0.5 * (multilineHeight - inputHeight + margin)) }]
+	},
+
+	overlayText: {
 		paddingTop: 0,
 		margin: 0,
-		color: settings.colors.white
+		color: settings.colors.neutralDark
+	},
+
+	nextButton: {
+		transform: [{ translateX: Math.round(0.5 * margin) }]
 	},
 
 
@@ -69,99 +176,178 @@ const lobby = StyleSheet.create({
 
 	tos: {
 		...general.container,
-		minWidth: 0.9 * Dimensions.get("window").width,
-		maxWidth: 0.9 * Dimensions.get("window").width,
-		minHeight: 0.5 * Dimensions.get("window").height,
-		maxHeight: 0.5 * Dimensions.get("window").height,
-		margin: 0.05 * Dimensions.get("window").width,
-		padding: 0.03 * Dimensions.get("window").width,
-		backgroundColor: settings.colors.white
+		minWidth: inputWidth,
+		maxWidth: inputWidth,
+		minHeight: tosHeight,
+		maxHeight: tosHeight,
+		margin: margin,
+		marginLeft: edge,
+		marginRight: edge,
+		backgroundColor: settings.colors.white,
+		borderColor: settings.colors.neutralDark,
+		borderWidth: layout.border,
+	},
+
+	tosHolder: {
+		padding: 2 * margin,
+		paddingTop: 0,
+	},
+
+	tosAgree: {
+		...general.containerRow,
+		alignSelf: "center",
+		justifyContent: "center",
+		maxWidth: inputWidth,
+		minHeight: inputHeight,
+		maxHeight: inputHeight,
+		margin: margin,
+		marginLeft: edge,
+		marginRight: edge,
 	},
 
 	tosCheck: {
-		...general.containerRow,
-		width: 0.9 * Dimensions.get("window").width,
-		minHeight: 0.2 * Dimensions.get("window").width,
-		padding: 0.0 * Dimensions.get("window").width,
+		alignSelf: "center",
+		justifyContent: "center",
+		minHeight: inputHeight,
+		maxHeight: inputHeight,
 	},
 
-	tosTouch: {
-		...general.containerRow,
-		maxWidth: 0.64 * Dimensions.get("window").width,
-	},
-
-	tosSide: {
-		...general.container,
-		minWidth: 0.16 * Dimensions.get("window").width,
-		maxWidth: 0.16 * Dimensions.get("window").width,
-		minHeight: 0.16 * Dimensions.get("window").width,
-		maxHeight: 0.16 * Dimensions.get("window").width
+	tosMessage: {
+		justifyContent: "center",
+		minHeight: inputHeight,
+		maxHeight: inputHeight,
+		marginLeft: edge
 	},
 
 	tosText: {
-		...general.container,
-		alignItems: "flex-start",
-		maxWidth: 0.5 * Dimensions.get("window").width
+		...text.neutral,
+		alignSelf: "flex-start",
+		fontSize: settings.fontsize.smallish,
+		color: settings.colors.neutralDarkest
+	},
+
+
+
+	submitButton: {
+		...button,
+		minWidth: insetWidth,
+		maxWidth: insetWidth,
+		margin: 2 * edge,
+	},
+
+	submitText: {
+		...text.title,
+		fontSize: settings.fontsize.largish,
+		color: settings.colors.white,
+		width: "100%",
+		textAlign: "center",
 	},
 
 
 
 	profilePicHolder: {
-		...general.card,
+		...general.container,
+		alignSelf: "center",
+		minWidth: insetWidth,
+		maxWidth: insetWidth,
+		minHeight: insetWidth,
+		maxHeight: insetWidth,
+		marginBottom: margin * 2,
+		
+	},
+
+	profilePicInner: {
+		...general.container,
+		borderBottomRightRadius: imageCorner,
 		overflow: "hidden",
-		minWidth: 0.7 * Dimensions.get("window").width,
-		maxWidth: 0.7 * Dimensions.get("window").width,
-		minHeight: 0.7 * Dimensions.get("window").width,
-		maxHeight: 0.7 * Dimensions.get("window").width,
-		margin: 0.04 * Dimensions.get("window").width,
-		borderTopLeftRadius: 0.01 * Dimensions.get("window").width,
-		borderTopRightRadius: 0.01 * Dimensions.get("window").width,
-		borderBottomLeftRadius: 0.01 * Dimensions.get("window").width,
-		borderBottomRightRadius: 0.2 * Dimensions.get("window").width,
-		backgroundColor: settings.colors.white
+		backgroundColor: settings.colors.neutralDark,
+	},
+
+	profilePicBorder: {
+		position: "absolute",
+		left: 0,
+		right: 0,
+		top: 0,
+		bottom: 0,
+		borderBottomRightRadius: imageCorner,
+		borderColor: settings.colors.neutralDark,
+		borderWidth: layout.border,
 	},
 
 	profilePic: {
-		width: 0.7 * Dimensions.get("window").width,
-		height: 0.7 * Dimensions.get("window").width,
+		width: insetWidth,
+		height: insetWidth,
 		resizeMode: "contain"
 	},
 
-
-
-	bioBox: {
-		...input.multiLine,
-		padding: 0.035 * Dimensions.get("window").width,
-		paddingTop: 0.035 * Dimensions.get("window").width,
-		paddingBottom: 0.035 * Dimensions.get("window").width,
-	},
-
-
-	task: {
+	profilePicOverlay: {
 		...general.container,
 		position: "absolute",
-		margin: 0.02 * Dimensions.get("window").width,
-		width: 0.96 * Dimensions.get("window").width,
-		minHeight: 2.0 * settings.fontsize.smallish,
-		backgroundColor: settings.colors.white,
-		borderRadius: 0.02 * Dimensions.get("window").width,
+		left: 0,
+		right: 0,
+		top: 0,
+		bottom: 0
 	},
 
-	taskText: {
-		...text.body,
-		color: settings.colors.major,
-		fontSize: settings.fontsize.smallish
+	profilePicButton: {
+		...general.container,
+		alignSelf: "flex-end",
+		minWidth: inputHeight,
+		maxWidth: inputHeight,
+		minHeight: imageButtonHeight,
+		maxHeight: imageButtonHeight,
+		transform: [
+			{ translateY: Math.round(0.5 * (insetWidth - imageButtonHeight)) },
+			{ translateX: Math.round(0.5 * imageButtonHeight) }
+		]
 	},
+
+
+
+
+	thumbnailContainer: {
+		...general.container,
+		alignItems: "flex-start",
+		position: "absolute",
+		left: edge + margin,
+		top: -1 * Math.round(inputHeight + margin),
+		width: thumbnailWidth,
+		height: thumbnailWidth,
+	},
+
+	thumbnailHolder: {
+		...general.container,
+		minWidth: thumbnailWidth,
+		maxWidth: thumbnailWidth,
+		minHeight: thumbnailWidth,
+		maxHeight: thumbnailWidth,
+		margin: Math.round(0.5 * margin),
+	},
+
+	thumbnailInner: {
+		...general.container,
+		borderBottomRightRadius: thumbnailCorner,
+		overflow: "hidden",
+		backgroundColor: settings.colors.neutralDark,
+	},
+
+	thumbnail: {
+		width: thumbnailWidth,
+		height: thumbnailWidth,
+		resizeMode: "contain",
+	},
+
+
 
 
 	welcome: {
 		...general.container,
-		width: 0.9 * Dimensions.get("window").width,
+		minWidth: insetWidth,
+		maxWidth: insetWidth,
+		margin: margin,
+		marginLeft: edge + margin,
+		marginRight: edge + margin,
 	},
-
-	welcomeText: {
-		...text.white
-	}
 
 
 

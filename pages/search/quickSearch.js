@@ -1,5 +1,5 @@
 import React from 'react';
-import Component from '../../utils/component';
+import Component from '../../components/component';
 import { View, Text, TextInput, FlatList,
 		 TouchableWithoutFeedback } from 'react-native';
 import { FontAwesomeIcon } from 'expo-fontawesome';
@@ -206,10 +206,7 @@ class QuickSearch extends Component {
 // RENDER
 
 	render() {
-		return <View style={[
-				styles.quickSearch.container,
-				styles.keyboard.aboveWithAuto
-			]}>
+		return <View style={styles.quickSearch.container}>
 
 			<View style={styles.quickSearch.header}>
 

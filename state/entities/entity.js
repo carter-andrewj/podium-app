@@ -1,4 +1,4 @@
-import { observable, action } from 'mobx';
+import { observable, action, computed } from 'mobx';
 
 import { Map } from 'immutable';
 
@@ -26,14 +26,16 @@ class Entity {
 		this.attributes = observable.map()
 
 		// Sync
-		this.syncing = observable.box(false)
+		this.syncing = observable.box(false)	// True when new data is being processed
 		this.received = null
+		this.isSynced = observable.box(false)	// True when the entity is up to date
+		this.isReady = observable.box(false)	// True when the entity has synced at least once
 
 		// Methods
 		this.fromAddress = this.fromAddress.bind(this)
 
-		this.read = this.read.bind(this)
 		this.sync = this.sync.bind(this)
+		this.unsync = this.unsync.bind(this)
 
 		this.receive = this.receive.bind(this)
 		this.setData = this.setData.bind(this)
@@ -44,6 +46,11 @@ class Entity {
 
 	}
 
+
+	@computed
+	get ready() {
+		return this.isReady.get()
+	}
 
 
 
@@ -67,15 +74,21 @@ class Entity {
 
 // READ
 
-	read() {
+	sync() {
 		return new Promise((resolve, reject) => {
 
 			// Listen for data
 			this.client.on(this.address, this.receive)
 
 			// Listen for completion
-			this.complete
-				.observe(change => change.newValue ? resolve() : null)
+			this.completer = this.complete
+				.observe(change => {
+					if (change.newValue) {
+						this.setSynced()
+						this.completer()
+						resolve()
+					}
+				})
 
 			// Request entity data from server
 			this.nation
@@ -83,17 +96,38 @@ class Entity {
 					type: this.type,
 					address: this.address
 				})
-				.then(this.sync)
+				.then(() => this.client
+					.emit(this.address, { type: "sync" })
+				)
 				.catch(reject)
 
 		})
 	}
 
+	unsync() {
 
-	sync() {
-		this.client.emit(this.address, { type: "sync" })
+		// Tell server to stop syncing
+		this.client.emit(this.address, { type: "unsync" })
+
+		// Dispose completion listener, if still active
+		if (this.completer) this.completer()
+
+		// Remove listener
+		this.client.removeListener(this.address, this.receive)
+
 	}
 
+
+	@action.bound
+	setSynced() {
+		this.isReady.set(true)
+		this.isSynced.set(true)
+	}
+
+	@action.bound
+	clearSynced() {
+		this.isSynced.set(false)
+	}
 
 
 
@@ -104,6 +138,9 @@ class Entity {
 
 		// Update entity if data is new
 		if (!this.latest.get() || data.timestamp > this.latest.get()) {
+
+			// Clear synced flag
+			this.clearSynced()
 
 			// Check if entity is already syncing
 			let last
@@ -146,6 +183,9 @@ class Entity {
 
 					// Clear syncing flag
 					this.syncing.set(false)
+
+					// Set synced flag
+					this.isSynced.set(true)
 
 				})
 				.catch(console.error)
@@ -191,15 +231,19 @@ class Entity {
 
 // ACT
 
-	act(action, ...args) {
+	act(action, label, ...args) {
 		return new Promise((resolve, reject) => {
 			this.nation
-				.task(this.address, {
-					type: "write",
-					action: action,
-					args: args,
-					auth: this.session.auth
-				})
+				.task(
+					this.address,
+					{
+						type: "write",
+						action: action,
+						args: args,
+						auth: this.session.auth
+					},
+					label
+				)
 				.then(resolve)
 				.catch(reject)
 		})

@@ -28,7 +28,7 @@ class Profile extends Entity {
 
 	@computed
 	get displayName() {
-		return this.state.get("displayName")
+		return this.state.get("name")
 	}
 
 	@computed
@@ -41,7 +41,8 @@ class Profile extends Entity {
 // ACTIONS
 
 	update(newProfile) {
-		return this.act("Update", newProfile)
+		console.log("profile", newProfile)
+		return this.act("Update", "Updating Profile...", newProfile)
 	}
 
 

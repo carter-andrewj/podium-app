@@ -5,9 +5,7 @@ import { Animated, Easing } from 'react-native';
 
 import Root from './root';
 
-import Register from './lobby/register';
-import SignIn from './lobby/signIn';
-import Welcome from './lobby/welcome';
+import Lobby from './lobby/lobby';
 
 import Core from './core';
 
@@ -24,9 +22,7 @@ const Navigator = createStackNavigator(
 	{
 		Root: Root,
 
-		Register: Register,
-		SignIn: SignIn,
-		Welcome: Welcome,
+		Lobby: Lobby,
 		
 		Core: Core,
 		

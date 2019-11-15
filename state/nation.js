@@ -22,7 +22,6 @@ if (!settings.server.local) {
 
 export default class Nation {
 
-
 	constructor(store) {
 
 		// Refs
@@ -30,91 +29,268 @@ export default class Nation {
 
 		// State
 		this.socket = null
-		this.live = observable.box(false)
-		this.name = observable.box()
-		this.error = observable.box()
+		this.tasks = observable.map({}, { name: "tasks" })
+		this.name = observable.box(undefined, { name: "nation" })
+		this.error = observable.box(undefined, { name: "error" })
 
 		// Methods
 		this.connect = this.connect.bind(this)
+		this.disconnect = this.disconnect.bind(this)
 
-		// Report errors
-		this.error.observe(value => console.log(`ERROR: ${value.newValue}`))
+		this.task = this.task.bind(this)
+
+		this.getNation = this.getNation.bind(this)
 
 	}
 
 
-	connect() {
+	@computed
+	get live() {
+		return this.name.get() ? true : false
+	}
+
+
+	@action.bound
+	fail(callback) {
+		return error => {
+
+			// Log error
+			this.error.set(error)
+
+			// Pass error to callback, if required
+			if (callback) {
+				callback(error)
+			} else {
+				throw error
+			}
+
+		}
+	}
+
+
+
+
+// CONNECTION
+
+	async connect() {
 		return new Promise((resolve, reject) => {
 
 			// Create websocket
 			this.socket = io.connect(url, { transports: ['websocket'] })
 
-			// Wait for connection to be confirmed
-			this.socket.on("connection", () => {
-
-				// Set live flag
-				this.live.set(true)
-
-				// Clear any connection errors
-				this.error.set(undefined)
-
-				// Listen for errors
-				this.socket.on("error", this.error.set)
-				this.socket.on("server_error", this.error.set)
-
-				// Set nation
-				this.task("nation")
-					.then(result => {
-						this.name.set(result)
-						resolve()
-					})
-					.catch(reject)
-
-			})
-
 			// Handle errors
-			this.socket.on("connect_error", error => {
+			this.socket.on("error", this.fail)
+			this.socket.on("server_error", this.fail)
+			
+			// Wait for connection to be confirmed or fail
+			this.socket.on("connection", () => !this.name.get() ? this.getNation() : null)
+			this.socket.on("connect_error", this.fail)
 
-				// Set and report error
-				this.error.set(error)
-				console.error(error)
+			// Report errors
+			this.reporter = this.error.observe(value => value.newValue ?
+				console.error(`ERROR: ${value.newValue}`)
+				: null
+			)
 
-				// Reject
-				reject(error)
-
+			// Listen for completion
+			let successListener
+			let errorListener
+			successListener = this.name.observe(value => {
+				if (value.newValue) {
+					errorListener()
+					successListener()
+					resolve(true)
+				}
+			})
+			errorListener = this.error.observe(error => {
+				if (error.newValue) {
+					successListener()
+					errorListener()
+					reject(error.newValue)
+				}
 			})
 
 		})
 	}
 
-
-	task(channel, payload) {
+	async disconnect() {
 		return new Promise((resolve, reject) => {
 
-			// Generate task id
-			const taskID = uuid()
+			// Stop reporting errors
+			this.reporter()
+
+			// Resolve
+			resolve()
+
+		})
+	}
+
+
+
+// SETUP
+
+	async getNation() {
+
+		// Prevent the nation being requested twice
+		if (this.nationTask) {
+
+			// Wait for nation task
+			await this.nationTask
+
+		} else {
+
+			// Create nation task
+			this.nationTask = this.task("nation")
+				.then(this.setNation)
+				.catch(this.fail)
+
+			// Wait for nation task to complete
+			await this.nationTask
+
+			// Dispose of nation task
+			this.nationTask = undefined
+
+		}
+
+		// Return nation name
+		return this.name.get()
+
+	}
+
+	@action.bound
+	setNation(nation) {
+		this.name.set(nation)
+		this.error.set(undefined)
+	}
+
+
+
+// TASKS
+
+	@action.bound
+	setTask(id, state) {
+
+		// Create task
+		let task = observable.map(
+			{
+				...state,
+				subscribers: 1,
+				complete: false
+			},
+			{ deep: false }
+		)
+
+		// Store task
+		this.tasks.set(id, task)
+
+		// Return task
+		return task
+
+	}
+
+
+	@action.bound
+	updateTask(id, update) {
+		this.tasks.get(id).merge(update)
+	}
+
+
+	@action.bound
+	reserveTask(id) {
+		let subscribers = this.tasks.get(id).get("subscribers")
+		this.tasks.get(id).set("subscribers", subscribers + 1)
+	}
+
+
+	@action.bound
+	releaseTask(id) {
+
+		// Check if this is the last subscriber
+		let subscribers = this.tasks.get(id).get("subscribers")
+		if (subscribers <= 1) {
+
+			// Delete task
+			this.tasks.delete(id)
+
+		// Otherwise 
+		} else {
+
+			// Decrement subscribers
+			this.tasks.get(id).set("subscribers", subscribers - 1)
+
+		}
+
+	}
+
+
+	@action.bound
+	completeTask(id) {
+
+		// Close socket
+		this.socket.removeListener(id, this.tasks.get(id).handler)
+
+		// Flag task as complete
+		this.tasks.get(id).set("complete", true)
+
+		// Release task from main controller
+		this.releaseTask(id)
+
+	}
+
+
+	task(channel, payload, label) {
+		return new Promise((resolve, reject) => {
+
+			// Generate task ID
+			let taskID = uuid()
+
+			// Create handler
+			let handler = async update => {
+
+				// ARTIFICIAL DELAY TO SIMULATE SERVER RESPONSE TIME
+				// IN DEVELOPMENT - REMOVE BEFORE SHIPPING
+				await new Promise(resolve => setTimeout(resolve, 1000))
+
+				this.updateTask(taskID, update)
+
+			}
+
+			// Define task
+			let task = this.setTask(taskID, {
+				label,
+				channel,
+				handler,
+				payload,
+				status: undefined
+			})
+
+			// Listen for success, failure
+			let listener = task.observe(({ name, newValue }) => {
+
+				// Reject on error
+				if (name === "error") {
+					listener()
+					this.releaseTask(taskID)
+					reject(newValue)
+				}
+
+				// Resolve on success
+				if (name === "result") {
+					listener()
+					this.completeTask(taskID)
+					resolve(newValue)
+				}
+
+			})
+
+			// Prepare for response
+			this.socket.on(taskID, handler)
 
 			// Send to server
 			this.socket.emit(channel, {
 				...payload,
 				task: taskID,
 				nation: this.name.get()
-			})
-
-			// Await response
-			this.socket.on(taskID, response => {
-
-				// Unpack response
-				const { error, result } = response
-
-				// Handle errors
-				if (error) {
-					console.error(new Error(`SERVER ERROR: ${error}`))
-					reject(error)
-				} else {
-					resolve(result)
-				}
-
 			})
 
 		})

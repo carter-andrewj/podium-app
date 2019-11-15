@@ -6,10 +6,12 @@ import settings from '../settings';
 const container = {
 	position: "relative",
 	flex: 1,
+	flexBasis: "auto",
 	width: "100%",
 	height: "auto",
 	flexDirection: "column",
 	backgroundColor: "transparent",
+	alignSelf: "stretch",
 	alignItems: 'center',
 	justifyContent: 'center',
 	alignContent: "center",
@@ -30,8 +32,9 @@ const card = {
 
 const screen = {
 	...container,
-	minHeight: Dimensions.get("window").height,
+	alignSelf: "stretch",
 	minWidth: Dimensions.get("window").width,
+	backgroundColor: settings.colors.major,
 }
 
 
@@ -39,7 +42,7 @@ const general = StyleSheet.create({
 
 	statusBar: {
 		flex: 1,
-		backgroundColor: settings.colors.major,
+		backgroundColor: settings.colors.white,
 		color: settings.colors.white
 	},
 
@@ -53,11 +56,6 @@ const general = StyleSheet.create({
 		flexGrow: 2,
 	},
 
-	// keyboardSpacer: {
-	// 	...container,
-	// 	minHeight: Dimensions.get("window").height * 0.35
-	// },
-
 	containerRow: {
 		...container,
 		flex: 1,
@@ -70,17 +68,6 @@ const general = StyleSheet.create({
 		flexGrow: 1,
 		justifyContent: "flex-start",
 	},
-
-	// shadow: {
-	// 	shadowRadius: 100,
-	// 	shadowColor: settings.colors.neutralDarkest
-	// },
-
-	// transparent: {
-	// 	opacity: 0.0
-	// },
-
-	// card: card,
 
 });
 

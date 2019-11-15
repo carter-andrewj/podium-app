@@ -1,41 +1,15 @@
 import React from 'react';
-import Component from '../utils/component';
-import { Text, View, TouchableOpacity } from 'react-native';
+import Component from '../component';
+import { Text, View, TouchableWithoutFeedback } from 'react-native';
 import { FontAwesomeIcon } from 'expo-fontawesome';
 
-import styles from '../styles/styles';
-import settings from '../settings';
+import styles from '../../styles/styles';
+import settings from '../../settings';
 
 
 
-export class Input extends Component {
 
-	constructor() {
-		super()
-		this.state = {
-			value: ""
-		}
-	}
-
-	get value() {
-		return this.state.value;
-	}
-
-	render() {
-		return <TouchableOpacity onPress={this.props.onPress}>
-			<View style={[styles.button, this.props.style]}>
-				<Text style={[styles.buttonText, this.props.textStyle]}>
-					{this.props.label}
-				</Text>
-			</View>
-		</TouchableOpacity>
-	}
-
-}
-
-
-
-export class CheckBox extends Component {
+export default class CheckBox extends Component {
 
 	constructor() {
 		super()
@@ -70,7 +44,7 @@ export class CheckBox extends Component {
 	}
 
 	render() {
-		return <TouchableOpacity onPress={this.toggle}>
+		return <TouchableWithoutFeedback onPress={this.toggle}>
 			<View style={[styles.input.checkbox, this.props.style]}>
 				<FontAwesomeIcon
 					icon="check"
@@ -82,9 +56,7 @@ export class CheckBox extends Component {
 					style={[styles.input.check, this.props.iconStyle]}
 				/>
 			</View>
-		</TouchableOpacity>
+		</TouchableWithoutFeedback>
 	}
 
 }
-
-

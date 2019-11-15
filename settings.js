@@ -75,11 +75,26 @@ const settings = {
 
 	layout: {
 
+		// Screen
+		screenMargin: 0.05,		// Space around edges of screen (% of screen width)
+		keyboardDelay: 25,		// Delay before resizing screen to keyboard to prevent jittering on focus changes (ms)
+		transitionTime: 500,	// Delay before navigating between screens (ms)
+
+		// Tasks
+		maxTasks: 3,			// Maximum number of tasks that can be displayed at the same time
+		taskExit: 1500,			// Interval between task completion and removal from HUD
+		taskLifetime: 4000,		// Minimum amount of time to display each task, even if it completes sooner (ms)
+
+		// Inputs
+		inputHeight: 0.16,		// Height of single line inputs (% of screen width)
+		multilineHeight: 0.48,	// Height of multi-line inputs (% of screen width)
+		checkBox: 0.05,			// Size of checkbox (% of screen width)
+
 		// Core layout
 		drawerSize: 0.9,		// Width of left/right nav drawers (% of screen width)
-		headerSize: 0.08,		// Height of navigation header (% of screen height)
-		footerSize: 0.06,		// Height of footers (% of screen height)
-		border: 2.0,			// Width of borders between layout segments (pixels)
+		headerSize: 0.17,		// Height of navigation header (% of screen width)
+		footerSize: 0.15,		// Height of footers (% of screen width)
+		border: 1.0,			// Width of borders between layout segments (pixels)
 		margin: 0.02,			// Margin used on core nav components (% of screen width)
 
 		// Pan Responder
@@ -94,19 +109,29 @@ const settings = {
 		corner: 0.38,			// Border radius of images with 1 corner rounded (% of image width)
 		button: 0.07,			// Size of standard square HUD button (% of screen width)
 		buttonIcon: 0.045,		// Size of icon in standard square HUD buton (% of screen width)
+		largeButton: 0.12,		// Size of large HUD button ($ of screen width)
+
+		// Timings
+		speed: 300,				// Speed of movement when calculating distance animations (px/s)
+		moveTime: 100,			// Duration of movement/resize animations (ms)
 		spinTime: 800,			// Spin duration for loading icon (ms)
+		fadeTime: 300,			// Fade in/out of fader elements (ms)
+
+		// Lobby
+		lobbyNavDelay: 4000,	// Delay before showing signin/register buttons in lobby (ms)
+		lobbyFooter: 0.15,		// Padding to bottom of lobby to raise center of screen (% of screen height)
 
 		// Quick Profile
-		quickProfile: 0.12,		// Minimum size of quick profile element in left drawer (% of screen height)
-		quickProfileCap: 0.4,	// Maximum size of quick profile element in left drawer (% of screen height)
-		quickProfileName: 0.06,	// Height of name element in quick profile (% of screen height)
+		quickProfile: 0.25,		// Minimum size of quick profile element in left drawer (% of screen width)
+		quickProfileCap: 0.8,	// Maximum size of quick profile element in left drawer (% of screen width)
+		quickProfileName: 0.12,	// Height of name element in quick profile (% of screen width)
 
 		// Quick Search
 		quickSearchIcon: 15,	// Size of icons in quicksearch input (pixels)
 
 		// Posts
 		postHeight: 0.15,		// Minimum height of a post (% of screen height)
-		postHeader: 0.03,		// Height of post header - name, @identity, etc.. (% of screen height)
+		postHeader: 0.06,		// Height of post header - name, @identity, etc.. (% of screen width)
 		postReactor: 0.3,		// Width of reactor element in post header (% of screen width)
 		postWing: 0.9,			// Width of post wings outside left/right side of screen (% of screen width)
 		postWingOverlap: 0.18,	// Overlap of post wings with post core content (% of screen width)

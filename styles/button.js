@@ -6,8 +6,6 @@ import text from './text';
 
 
 const layout = settings.layout
-
-const screenHeight = Dimensions.get("window").height
 const screenWidth = Dimensions.get("window").width
 
 const buttonSize = Math.round(layout.button * screenWidth)
@@ -17,53 +15,14 @@ const buttonSize = Math.round(layout.button * screenWidth)
 
 const container = {
 	...general.container,
-	minWidth: buttonSize - 2.0,
-	maxWidth: buttonSize - 2.0,
-	minHeight: buttonSize - 2.0,
-	maxHeight: buttonSize - 2.0,
+	minWidth: buttonSize,
+	maxWidth: buttonSize,
+	minHeight: buttonSize,
+	maxHeight: buttonSize,
 	borderWidth: 1.0,
 }
 
 const button = StyleSheet.create({
-
-	// round: {
-	// 	borderRadius: Dimensions.get("window").width * 0.07,
-	// },
-
-	// text: {
-	// 	...text.title,
-	// 	fontSize: settings.fontsize.normal,
-	// 	padding: Dimensions.get("window").width * 0.04,
-	// 	paddingTop: Dimensions.get("window").width * 0.04,
-	// 	margin: 0
-	// },
-
-	// icon: {
-	// 	color: settings.colors.major
-	// },
-
-
-	// caption: {
-	// 	position: "absolute",
-	// 	width: 0.08 * Dimensions.get("window").width,
-	// 	right: -0.09 * Dimensions.get("window").width,
-	// },
-
-	// captionText: {
-	// 	...text.title,
-	// 	textAlign: "left",
-	// 	fontSize: settings.fontsize.smaller,
-	// 	color: settings.colors.major,
-	// 	paddingBottom: 0
-	// },
-
-
-
-	// loading: {
-	// 	...general.container,
-	// },
-
-
 
 	container: container,
 

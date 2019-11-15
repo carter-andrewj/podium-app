@@ -7,26 +7,20 @@ import text from './text';
 
 
 const layout = settings.layout
-
 const screenWidth = Dimensions.get("window").width
-const screenHeight = Dimensions.get("window").height
 
 const margin = Math.round(screenWidth * layout.margin)
-
-//const buttonSize = Math.round(overlap * 0.5)
-//const postHeight = Math.round(screenHeight * layout.postHeight)
 
 const buttonSize = Math.round(screenWidth * layout.button)
 
 const postWidth = screenWidth - (2 * margin)
-//const overlap =  Math.round((screenWidth * layout.postWingOverlap) - (2 * margin))
 const overlap = 2 * buttonSize
 const wingWidth = Math.round((screenWidth * (layout.postWing - (3.0 * layout.margin))) - 
 	overlap - margin)
 
 const fullWidth = postWidth + (2 * wingWidth) + (4 * margin)
 
-const headerHeight = Math.round(screenHeight * layout.postHeader)
+const headerHeight = Math.round(screenWidth * layout.postHeader)
 const reactorWidth = Math.round(screenWidth * layout.postReactor)
 
 const postHeight = headerHeight + (2 * buttonSize) + (4 * margin)

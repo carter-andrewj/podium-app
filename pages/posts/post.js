@@ -1,5 +1,5 @@
 import React from 'react';
-import Component from '../../utils/component';
+import Component from '../../components/component';
 import { Text, View, Image, Animated, Dimensions,
 		 PanResponder, TouchableOpacity } from 'react-native';
 import { FontAwesomeIcon } from 'expo-fontawesome';
@@ -12,9 +12,9 @@ import globals from '../../globals';
 import settings from '../../settings';
 import styles from '../../styles/styles';
 
-import SquareButton from '../../components/squareButton';
-import FollowButton from '../../components/followButton';
-import Spinner from '../../components/spinner';
+import SquareButton from '../../components/buttons/squareButton';
+import FollowButton from '../../components/buttons/followButton';
+import Spinner from '../../components/animated/spinner';
 
 
 

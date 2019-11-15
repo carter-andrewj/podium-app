@@ -1,12 +1,14 @@
 import React from 'react';
-import Component from '../../utils/component';
+import Component from '../../components/component';
 import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
 import settings from '../../settings';
 import styles from '../../styles/styles';
 
-import Button from '../../components/button';
+import Spinner from '../../components/animated/spinner';
+
+import Button from '../../components/buttons/button';
 
 
 @inject("store")
@@ -66,41 +68,52 @@ class QuickProfile extends Component {
 
 
 	render() {
-		const profile = this.activeUser.profile
-		return <View style={[
-				styles.quickProfile.container,
-				{
-					minHeight: this.state.height,
-					maxHeight: this.state.height
-				}
-			]}>
-			
-			{profile ?
-				<TouchableOpacity
-					style={styles.quickProfile.profile}
-					onPress={() => this.navigate("Profile")}>
-					<View style={styles.quickProfile.profile}>
 
-						<View style={styles.quickProfile.left}>
-							<View style={styles.quickProfile.pictureHolder}>
+		// Get profile
+		let ready = this.activeUser && this.activeUser.ready
+
+		return <View style={{
+				...styles.quickProfile.container,
+				minHeight: this.state.height,
+				maxHeight: this.state.height
+			}}>
+			
+			<TouchableOpacity
+				style={styles.quickProfile.profile}
+				onPress={() => this.navigate("Profile")}>
+				<View style={styles.quickProfile.profile}>
+
+					<View style={styles.quickProfile.left}>
+						<View style={styles.quickProfile.pictureHolder}>
+							{ready ?
 								<Image
 									style={styles.quickProfile.picture}
 									source={this.activeUser.profile.picture}
 								/>
-							</View>
+								:
+								<Spinner />
+							}
+						</View>
+					</View>
+
+					<View style={styles.quickProfile.right}>
+
+						<View style={styles.quickProfile.header}>
+							<Text style={styles.profile.name}>
+								{ready ? 
+									this.activeUser.profile.displayName
+									: null
+								}
+							</Text>
+							<Text style={styles.profile.identity}>
+								{ready ?
+									this.activeUser.alias
+									: null
+								}
+							</Text>
 						</View>
 
-						<View style={styles.quickProfile.right}>
-
-							<View style={styles.quickProfile.header}>
-								<Text style={styles.profile.name}>
-									{this.activeUser.profile.displayName}
-								</Text>
-								<Text style={styles.profile.identity}>
-									{this.activeUser.alias}
-								</Text>
-							</View>
-
+						{ready ?
 							<ScrollView
 								scrollEnabled={this.state.scroll}
 								contentContainerStyle={[
@@ -128,14 +141,16 @@ class QuickProfile extends Component {
 									{this.activeUser.profile.bio}
 								</Text>
 							</ScrollView>
+							: null
+						}
 
-						</View>
 					</View>
-				</TouchableOpacity>
-				: null
-			}
 
-		<View style={styles.quickProfile.footer}>
+				</View>
+			</TouchableOpacity>
+
+
+			<View style={styles.quickProfile.footer}>
 
 				<Button
 					onPress={() => this.navigate("Wallet")}

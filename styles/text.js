@@ -4,6 +4,12 @@ import settings from '../settings';
 import general from './general';
 
 
+const layout = settings.layout
+const screenWidth = Dimensions.get("window").width
+
+const margin = Math.round(screenWidth * layout.margin)
+
+
 const body = {
 	fontFamily: settings.fonts.body,
 	fontSize: settings.fontsize.normal,
@@ -32,11 +38,28 @@ const text = StyleSheet.create({
 
 	body: body,
 
+	paragraph: {
+		...body,
+		fontSize: settings.fontsize.smallish,
+		textAlign: "justify",
+		paddingTop: 2 * margin,
+	},
+
 	caption: caption,
 
-	wait: {
+	neutral: {
 		...caption,
 		color: settings.colors.neutralDark,
+	},
+
+	major: {
+		...caption,
+		color: settings.colors.major,
+	},
+
+	minor: {
+		...caption,
+		color: settings.colors.minor,
 	},
 
 	good: {
@@ -56,10 +79,7 @@ const text = StyleSheet.create({
 
 	error: {
 		...caption,
-		color: settings.colors.white,
-		backgroundColor: settings.colors.bad,
-		paddingLeft: Math.round(0.5 * settings.fontsize.smallish),
-		paddingRight: Math.round(0.5 * settings.fontsize.smallish),
+		color: settings.colors.bad,
 	},
 
 	success: {

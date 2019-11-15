@@ -1,79 +1,58 @@
 import { Platform } from "react-native";
-import { observable, computed, action, toJS } from "mobx";
+import { configure, observable, computed, action, toJS } from "mobx";
 import { Permissions } from 'expo';
 import * as SecureStore from 'expo-secure-store';
 import * as Font from 'expo-font';
+import { Asset } from 'expo-asset';
+
+import config from './config';
 
 import Nation from './nation';
 import Session from './session';
 
 
+
+// Configure MobX
+configure({ enforceActions: config.enforceActions })
+
+
+
+
 export default class Store {
-
-
-	@observable load = {
-		fonts: false,
-		nation: false,
-		accounts: false
-	}
-
-	@observable error = null;
-
-	@observable accounts = {};
-
-	@observable config = {
-
-		media: {
-			source: "https://media.podium-network.com"
-		},
-
-		records: {
-			reload: 1000 * 10,
-			lifetime: 1000 * 60
-		},
-
-		validation: {
-			delay: 1000,
-			alias: {
-				minLength: 1,
-				maxLength: 20,
-				chars: /[^A-Z0-9_-]/i
-			},
-			passphrase: {
-				minLength: 7,
-				maxLength: 36
-			},
-			name: {
-				maxLength: 50
-			},
-			bio: {
-				maxLength: 250
-			}
-		},
-
-		postCosts: {
-			perCharacter: 1,
-			tag: 10,
-			url: 10
-		}
-
-	}
-
-	@observable permissions = {
-		camera: false
-	}
 
 
 	constructor() {
 
+		// Observables
+		this.load = observable.map(
+			{
+				fonts: false,
+				media: false,
+				account: false,
+				nation: false
+			},
+			{ name: "loader"}
+		)
+
+		this.permissions = observable.map(
+			{
+				camera: false
+			},
+			{ name: "permissions" }
+		)
+
+		// State
+		this.account = undefined
 		this.nation = new Nation(this)
 		this.session = new Session(this)
+		this.config = config
 
+		// Methods
 		this.loadNation = this.loadNation.bind(this)
 
 		this.loadFonts = this.loadFonts.bind(this)
 
-		this.loadAccounts = this.loadAccounts.bind(this)
+		this.loadAccount = this.loadAccount.bind(this)
 		this.addAccount = this.addAccount.bind(this)
 		this.setAccount = this.setAccount.bind(this)
 
@@ -86,10 +65,12 @@ export default class Store {
 
 // LOADING
 
-	@computed get loaded() {
-		return this.load.fonts
-			&& this.load.nation
-			&& this.load.accounts
+	@computed
+	get loaded() {
+		return this.load.get("fonts")
+			&& this.load.get("media")
+			&& this.load.get("nation")
+			&& this.load.get("account")
 	}
 
 
@@ -97,48 +78,63 @@ export default class Store {
 
 // LEDGER
 
-	loadNation() {
-		if (this.load.nation) {
-			return new Promise(resolve => resolve())
-		} else {
-			return new Promise((resolve, reject) => {
-				this.nation.connect()
-					.then(() => {
-						this.load.nation = true
-						resolve()
-					})
-					.catch(error => {
-						this.error = error
-						reject()
-					})
-			})
-		}
+	async loadNation() {
+
+		// Ignore if already loaded
+		if (this.load.get("nation")) return true
+
+		// Connect to nation
+		await this.nation.connect()
+		
+		// Set loaded flag
+		this.load.set("nation", true)
+
+		// Return
+		return true
+
 	}
 
 
 
 
-// FONTS
+// ASSETS
 
-	loadFonts() {
-		if (this.load.fonts) {
-			return new Promise(resolve => resolve())
-		} else {
-			return new Promise((resolve, reject) => {
-				Font.loadAsync({
-					Varela: require('../assets/fonts/Varela-Regular.ttf'),
-					VarelaRound: require('../assets/fonts/VarelaRound-Regular.ttf'),
-				})
-				.then(() => {
-					this.load.fonts = true
-					resolve(true)
-				})
-				.catch(error => {
-					this.error = error
-					reject()
-				})
-			})
-		}
+	async loadMedia() {
+
+		// Ignore if already loaded
+		if (this.load.get("media")) return true
+
+		// Load media
+		await Promise.all(this.config.media.preload
+			.map(file => require("../assets/icon.png"))
+			.map(media => Asset.fromModule(media).downloadAsync())
+		)
+
+		// Set loaded flag
+		this.load.set("media", true)
+
+		// Return
+		return true
+
+	}
+
+	async loadFonts() {
+
+		// Ignore if already loaded
+		if (this.load.get("fonts")) return true
+
+		// Load fonts
+		await Font.loadAsync({
+			Varela: require('../assets/fonts/Varela-Regular.ttf'),
+			VarelaRound: require('../assets/fonts/VarelaRound-Regular.ttf'),
+		})
+
+		// Set loaded flag
+		this.load.set("fonts", true)
+
+		// Return
+		return true
+
 	}
 
 
@@ -147,78 +143,59 @@ export default class Store {
 
 // ACCOUNTS
 
-	loadAccounts() {
-		if (this.load.accounts) {
-			return true
-		} else {
-			return new Promise((resolve, reject) => {
+	async loadAccount() {
 
-				// Wait for retrieval
-				Promise
-					.all([
-						SecureStore.getItemAsync("active"),
-						SecureStore.getItemAsync("accounts")
-					])
-					.then(([last, accounts]) => {
+		// Retreive account
+		let account = await this.getAccount()
 
-						// Set loaded flag
-						this.load.accounts = true
+		// Set account and loaded flag
+		this.load.set("account", true)
 
-						// Unpack accounts
-						if (accounts) {
-							this.accounts = JSON.parse(accounts);
-						}
+		// Return the account
+		return account
 
-						// Return most recent account
-						if (last) {
-							resolve({
-								address: last,
-								...this.accounts[last]
-							})
-						} else {
-							resolve(false)
-						}
-
-					})
-					.catch(error => {
-						this.error = error
-						reject(error)
-					})
-
-			})
-		}
 	}
 
 
-	addAccount(address, keyPair, passphrase) {
-		return new Promise((resolve, reject) => {
-			this.accounts[address] = {
-				keyPair: keyPair,
-				passphrase: passphrase,
-				nation: this.nation.name
-			}
-			SecureStore
-				.setItemAsync("accounts", JSON.stringify(toJS(this.accounts)))
-				.then(() => this.setAccount(address))
-				.then(resolve)
-				.catch(error => {
-					this.error = error
-					reject()
-				})
-		})
+	async getAccount() {
+
+		// Ignore if already loaded
+		if (this.load.get("account")) return this.account
+
+		// Get last active account
+		let active = await SecureStore.getItemAsync("active")
+
+		// Ignore if no account was active
+		if (!active) return false
+
+		// Load last active account
+		return await SecureStore
+			.getItemAsync(active)
+			.then(item => item ? JSON.parse(item) : undefined)
+
 	}
 
 
-	setAccount(address) {
-		return new Promise((resolve, reject) => {
-			SecureStore
-				.setItemAsync("active", address)
-				.then(resolve)
-				.catch(error => {
-					this.error = error
-					reject()
-				})
+	async addAccount({ address, keyPair, passphrase }) {
+
+		// Create account payload
+		let account = JSON.stringify({
+			keyPair: keyPair,
+			passphrase: passphrase,
+			nation: this.nation.name
 		})
+
+		// Store account
+		await SecureStore.setItemAsync(address, account)
+
+		// Set active account
+		await this.setAccount(address)
+
+	}
+
+
+	async setAccount(address) {
+		return await SecureStore.setItemAsync("active", address)
 	}
 
 
@@ -227,18 +204,37 @@ export default class Store {
 
 // PERMISSIONS
 
-	permitCamera() {
-		return new Promise((resolve, reject) => {
-			if (Platform.OS === "ios") {
-				Permissions
-					.askAsync(Permissions.CAMERA_ROLL)
-					.then(({ status }) => {
-						this.permissions.camera = (status === "granted")
-						resolve(this.permissions.camera)
-					})
-					.catch(reject)
-			}
-		})
+	async permitCamera() {
+
+		// Check if camera is already permitted
+		if (this.permissions.get("camera")) return true
+
+		let granted = false
+
+		// Handle iOS
+		if (Platform.OS === "ios") {
+
+			// Request permissions
+			let { status } = await Permissions
+				.askAsync(Permissions.CAMERA_ROLL)
+
+			if (status === "granted") granted = true
+
+		// Handle Android
+		} else if (Platform.OS === "android") {
+
+			// Request permissions
+			//TODO
+			granted = true
+
+		}
+
+		// Set status
+		this.permissions.set("camera", granted)
+
+		// Return permissions
+		return this.permissions.get("camera")
+
 	}
 
 

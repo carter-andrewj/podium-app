@@ -17,16 +17,15 @@ export default class Session {
 		this.session = this
 
 		// Authentication
-		this.address = null
-		this.auth = null
-		this.keyPair = null
-		this.passphrase = null
-		this.authenticated = observable.box(false)
+		this.credentials = undefined
+		this.authenticated = observable.box(false, { name: "authenticated?"})
 
 		// State
-		this.alerts = observable.array()
-		this.entities = observable.map()
+		this.alerts = observable.array([], { name: "alerts" })
+		this.entities = observable.map({}, { name: "entities" })
 		this.feed = new Feed(this)
+
+		this.registerData = observable.map({}, { name: "registration data" })
 
 		// Methods
 		this.register = this.register.bind(this)
@@ -47,34 +46,47 @@ export default class Session {
 	}
 
 
+// GETTERS
+
+	get address() { return this.credentials.address }
+
+	get auth() { return this.credentials.auth }
+
+	get keyPair() { return this.credentials.keyPair }
+
+	get passphrase() { return this.credentials.passphrase }
+
+	@computed
+	get user() {
+		return this.entities.get(this.address)
+	}
+
+
+
 
 // AUTHENTICATION
 
 	register(alias, passphrase) {
-		this.passphrase = passphrase
 		return this.nation
-			.task("register", { alias, passphrase })
+			.task("register", { alias, passphrase }, `Registering @${alias}...`)
 			.then(this.authenticate)
-			.catch(console.error)
-
+			.then(() => true)
 	}
 
 
 	signIn(alias, passphrase) {
-		this.passphrase = passphrase
 		return this.nation
-			.task("signIn", { alias, passphrase })
+			.task("signIn", { alias, passphrase }, `Signing In @${alias}...`)
 			.then(this.authenticate)
-			.catch(console.error)
+			.then(() => true)
 	}
 
 
 	keyIn(keyPair, passphrase) {
-		this.passphrase = passphrase
 		return this.nation
-			.task("keyIn", { keyPair, passphrase })
+			.task("keyIn", { keyPair, passphrase }, `Signing In...`)
 			.then(this.authenticate)
-			.catch(console.error)
+			.then(() => true)
 	}
 
 
@@ -90,66 +102,70 @@ export default class Session {
 			this.subscribe("user", this.address),
 
 			// Update keychain
-			this.store.addAccount(this.address, this.keyPair, this.passphrase),
+			this.store.addAccount(credentials),
 
 		])
 
 	}
 
 
-	@action
-	setCredentials({ address, auth, keyPair }) {
+	@action.bound
+	setCredentials(credentials) {
 
 		// Store credentials
-		this.auth = auth
-		this.address = address
-		this.keyPair = keyPair
+		this.credentials = credentials
 
 		// Set flag
 		this.authenticated.set(true)
 
 	}
 
-	signOut() {}
+
+	async signOut() {
+
+		// Deauthenticated
+		this.authenticated.set(false)
+
+		// Unsubscribe all entities
+		await Promise.all(this.entities.values(e => e.unsync()))
+
+		// Sign out
+		await this.user.signOut()
+
+		// Remove all entities
+		this.entities.clear()
+
+		// Clear credentials
+		this.credentials = undefined
+
+	}
 
 
 
 
 // ENTITIES
 
-	@computed
-	get user() {
-		return this.entities.get(this.address)
+	async subscribe(type, address) {
+
+		// Check if entity is already subscribed
+		let current = this.entities.get(address)
+
+		// Return cached entity, if it exists
+		if (current) return current
+
+		// Get entity type
+		let entity = this.makeEntity(type, address)
+
+		// Read and return
+		await entity.sync()
+
+		// Return entity
+		return entity
+
 	}
 
 
-	subscribe(type, address) {
-		return new Promise((resolve, reject) => {
-
-			// Check if entity is already subscribed
-			let current = this.entities.get(address)
-
-			// Return cached entity, if it exists
-			if (current) {
-				resolve(current)
-			} else {
-
-				// Get entity type
-				let entity = this.makeEntity(type, address)
-
-				// Read and return
-				entity
-					.read()
-					.then(resolve)
-					.catch(reject)
-
-			}
-
-		})
-	}
-
-
-	@action
+	@action.bound
 	makeEntity(type, address) {
 
 		// Get entity class
@@ -178,6 +194,10 @@ export default class Session {
 
 	search(terms, among) {
 		return this.nation.task("search", { terms, among })
+	}
+
+	find(term, among) {
+		return this.nation.task("find", { term, among })
 	}
 
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import Page from '../../utils/page';
+import Page from '../../components/page';
 import { View, ScrollView, Text, TextInput,
 		 Image, Dimensions } from 'react-native';
 import { inject, observer } from 'mobx-react';
@@ -9,9 +9,8 @@ import { List, Map, fromJS } from 'immutable';
 import settings from '../../settings';
 import styles from '../../styles/styles';
 
-import KeyboardView from '../../components/keyboardView';
-import SquareButton from '../../components/squareButton';
-import Button from '../../components/button';
+import SquareButton from '../../components/buttons/squareButton';
+import Button from '../../components/buttons/button';
 
 
 
@@ -82,7 +81,6 @@ class CreatePost extends Page {
 			// Dimension scaling
 			visibleHeight: Dimensions.get("window").height -
 				styles.layout.mainHeader.minHeight,
-			keyboardHeight: 0,
 			fullHeight: 0,
 			bodyHeight: styles.post.bodyText.minHeight,
 			contentHeight: styles.post.bodyText.minHeight +
@@ -607,22 +605,14 @@ class CreatePost extends Page {
 
 // LAYOUT CONTROL
 
-	onKeyboard(height) {
-		this.updateState(
-			state => state.set("keyboardHeight", height + 44),
-			this.resize
-		)
-	}
-
 
 	resize(event) {
 
 		// Get visible height
 		const screenHeight = Dimensions.get("window").height
-		const keyboardHeight = this.state.keyboardHeight
 		const footerHeight = styles.newPost.footer.minHeight
 		const headerHeight = styles.layout.mainHeader.minHeight
-		const viewHeight = screenHeight - headerHeight - footerHeight - keyboardHeight
+		const viewHeight = screenHeight - headerHeight - footerHeight
 
 		// Get content height
 		const titleHeight = styles.post.header.minHeight
@@ -659,8 +649,6 @@ class CreatePost extends Page {
 				this.scroll.scrollTo({ y: 0 })
 			}
 		}
-
-		console.log("size", inputHeight, bodyHeight, refHeight, height)
 
 		// Set new minimum view height
 		this.updateState(

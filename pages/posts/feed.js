@@ -1,5 +1,5 @@
 import React from 'react';
-import Page from '../../utils/page';
+import Page from '../../components/page';
 import { Dimensions, FlatList, Text, View,
 		 TouchableOpacity } from 'react-native';
 import { FontAwesomeIcon } from 'expo-fontawesome';
@@ -13,7 +13,7 @@ import styles from '../../styles/styles';
 
 import Post from './post';
 
-import Spinner from '../../components/spinner';
+import Spinner from '../../components/animated/spinner';
 
 
 
@@ -44,11 +44,6 @@ class Feed extends Page {
 
 	}
 
-
-
-	shouldComponentUpdate(props) {
-		return !props.screenProps.animUpdate
-	}
 
 	pageWillFocus() {
 		this.props.screenProps.setBanner(

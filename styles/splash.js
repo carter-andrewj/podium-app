@@ -1,28 +1,34 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import Constants from 'expo-constants';
 
 import settings from '../settings';
 import general from './general';
 
 
+const layout = settings.layout
+
+const screenWidth = Dimensions.get("window").width
+const screenHeight = Math.round((Dimensions.get("window").height - Constants.statusBarHeight))
+
+
 const splash = StyleSheet.create({
 
-	// background: {
-	// 	...general.screen,
-	// 	position: "absolute",
-	// 	backgroundColor: settings.colors.major
-	// },
+	body: {
+		...general.container,
+		backgroundColor: settings.colors.white
+	},
 
-	// iconBox: {
-	// 	maxHeight: 0.4 * Dimensions.get("window").height,
-	// 	paddingBottom: 0.2 * Dimensions.get("window").height,
-	// },
+	iconBox: {
 
-	// icon: {
-	// 	flex: 1,
-	// 	width: 0.3 * Dimensions.get("window").width,
-	// 	minHeight: 0.25 * Dimensions.get("window").width,
-	// 	resizeMode: "contain"
-	// }
+	},
+
+	icon: {
+		flex: 1,
+		margin: "auto",
+		width: Math.round(0.2 * screenWidth),
+		minHeight: Math.round(0.25 * screenWidth),
+		resizeMode: "contain"
+	}
 
 });
 

@@ -7,13 +7,11 @@ import text from './text';
 
 
 const layout = settings.layout
-
 const screenWidth = Dimensions.get("window").width
-const screenHeight = Dimensions.get("window").height
 
 const referenceHeight = Math.round(screenWidth * layout.refHeight)
 
-const footerSize = Math.round(screenHeight * layout.footerSize)
+const footerSize = Math.round(screenWidth * layout.footerSize)
 
 const margin = Math.round(screenWidth * layout.margin)
 

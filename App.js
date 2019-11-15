@@ -1,5 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
+
+import { configure } from "mobx"
 import { Provider } from 'mobx-react';
 import { registerRootComponent } from 'expo';
 
@@ -11,7 +13,7 @@ import styles from './styles/styles';
 
 
 
-
+// Create MobX Store
 let store = new Store();
 
 

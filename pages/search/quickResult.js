@@ -1,12 +1,12 @@
 import React from 'react';
-import Component from '../../utils/component';
+import Component from '../../components/component';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { inject, observer } from 'mobx-react';
 
 import styles from '../../styles/styles';
 
-import SquareButton from '../../components/squareButton';
-import FollowButton from '../../components/followButton';
+import SquareButton from '../../components/buttons/squareButton';
+import FollowButton from '../../components/buttons/followButton';
 
 
 @inject("store")

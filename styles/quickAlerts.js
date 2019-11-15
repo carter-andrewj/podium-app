@@ -7,19 +7,17 @@ import text from './text';
 
 
 const layout = settings.layout
-
 const screenWidth = Dimensions.get("window").width
-const screenHeight = Dimensions.get("window").height
 
 const drawerSize = Math.round(layout.drawerSize * screenWidth)
 
-const headerSize = Math.round(layout.headerSize * screenHeight)
+const headerSize = Math.round(layout.headerSize * screenWidth)
 
 const margin = Math.round(screenWidth * layout.margin)
 
 const titleWidth = Math.round(0.35 * drawerSize)
 
-const alertHeight = Math.round(screenHeight * layout.alertSize)
+const alertHeight = Math.round(screenWidth * layout.alertSize)
 
 
 

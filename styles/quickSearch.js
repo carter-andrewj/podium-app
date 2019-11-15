@@ -7,15 +7,13 @@ import text from './text';
 
 
 const layout = settings.layout
-
 const screenWidth = Dimensions.get("window").width
-const screenHeight = Dimensions.get("window").height
 
 const drawerWidth = Math.round(layout.drawerSize * screenWidth)
 
 const margin = Math.round(layout.margin * screenWidth)
 
-const headerHeight = Math.round(layout.headerSize * screenHeight)
+const headerHeight = Math.round(layout.headerSize * screenWidth)
 const inputPadding = Math.round((headerHeight +
 	layout.quickSearchIcon) * 0.5)
 

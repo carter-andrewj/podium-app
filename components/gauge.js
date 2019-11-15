@@ -1,5 +1,5 @@
 import React from 'react';
-import Component from '../utils/component';
+import Component from './component';
 import { View, Text } from 'react-native';
 import { FontAwesomeIcon } from 'expo-fontawesome';
 

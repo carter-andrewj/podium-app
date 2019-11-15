@@ -1,5 +1,5 @@
 import React from 'react';
-import Page from '../utils/page';
+
 import { Text, View, TextInput, Dimensions, Animated, FlatList,
 		 Easing, PanResponder, TouchableWithoutFeedback } from 'react-native';
 import { FontAwesomeIcon } from 'expo-fontawesome';
@@ -10,9 +10,10 @@ import globals from '../globals';
 import settings from '../settings';
 import styles from '../styles/styles';
 
-import Screen from './screen';
+import Page from '../components/page';
+import Screen from '../components/screen';
 
-import Button from '../components/button';
+import Button from '../components/buttons/button';
 
 import Feed from './posts/feed';
 import CreatePost from './posts/createPost';
@@ -318,14 +319,11 @@ class Core extends Page {
 
 	navigate(to, params={}) {
 		this.closeDrawer()
-		this.nav.props.navigation.navigate(to, params)
+		super.navigate(to, params)
 	}
 
 	signOut() {
-		this.session
-			.signOut()
-			.then(() => this.props.navigation.navigate("SignIn"))
-			.catch(console.error)
+		this.props.navigation.popToTop()
 	}
 
 	quickSearch() {
@@ -413,17 +411,18 @@ class Core extends Page {
 
 		const transform = this.pan.getTranslateTransform()[0]
 
-		return <Screen style={[
-				styles.container,
-				{ backgroundColor: settings.colors.white }
-			]}>
+		return <Screen style={{
+				...styles.container,
+				backgroundColor: settings.colors.white,
+			}}>
 
 			<Animated.View
 				{ ...this.panResponder.panHandlers }
-				style={[
-					styles.layout.container,
-					{ transform: [transform] }
-				]}>
+				style={{
+					...styles.layout.container,
+					marginLeft: -1 * this.span,
+					transform: [ transform ]
+				}}>
 
 
 

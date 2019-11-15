@@ -51,6 +51,13 @@ class User extends Entity {
 	}
 
 
+// ACTIONS
+
+	signOut() {
+		return this.act("signOut")
+	}
+
+
 
 }
 

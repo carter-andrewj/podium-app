@@ -1,5 +1,5 @@
 import React from 'react';
-import Component from '../../utils/component';
+import Component from '../../components/component';
 import { View, Text, FlatList, Image,
 		 TouchableOpacity } from 'react-native';
 import { autorun, toJS, trace } from 'mobx';
@@ -9,7 +9,7 @@ import globals from '../../globals';
 import settings from '../../settings';
 import styles from '../../styles/styles';
 
-import Button from '../../components/button';
+import Button from '../../components/buttons/button';
 
 
 

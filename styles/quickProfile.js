@@ -8,16 +8,14 @@ import profile from './profile';
 
 
 const layout = settings.layout
-
 const screenWidth = Dimensions.get("window").width
-const screenHeight = Dimensions.get("window").height
 
 const drawerWidth = Math.round(layout.drawerSize * screenWidth)
 
-const profileHeight = Math.round(layout.quickProfile * screenHeight)
-const profileCap = Math.round(layout.quickProfileCap * screenHeight)
+const profileHeight = Math.round(layout.quickProfile * screenWidth)
+const profileCap = Math.round(layout.quickProfileCap * screenWidth)
 
-const footerHeight = Math.round(layout.headerSize * screenHeight)
+const footerHeight = Math.round(layout.headerSize * screenWidth)
 
 const margin = Math.round(layout.margin * screenWidth)
 

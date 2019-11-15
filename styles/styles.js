@@ -5,7 +5,8 @@ import general from './general';
 import text from './text';
 import input from './input';
 import button from './button';
-import keyboard from './keyboard';
+
+import tasks from './tasks';
 
 import splash from './splash';
 import lobby from './lobby';
@@ -34,7 +35,7 @@ const styles = {
 	text: { ...text },
 	input: { ...input },
 	button: { ...button },
-	keyboard: { ...keyboard },
+	tasks: { ...tasks },
 
 	// Pages
 	splash: { ...splash },

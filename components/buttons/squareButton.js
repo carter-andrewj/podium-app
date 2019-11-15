@@ -1,12 +1,12 @@
 import React from 'react';
-import Component from '../utils/component';
+import Component from '../component';
 import { Dimensions, Text, View, TouchableOpacity } from 'react-native';
 import { FontAwesomeIcon } from 'expo-fontawesome';
 
-import styles from '../styles/styles';
-import settings from '../settings';
+import styles from '../../styles/styles';
+import settings from '../../settings';
 
-import Spinner from './spinner';
+import Spinner from '../animated/spinner';
 
 
 

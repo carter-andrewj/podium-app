@@ -6,18 +6,12 @@ import text from './text';
 
 
 const layout = settings.layout
-
-const screenHeight = Dimensions.get("window").height
 const screenWidth = Dimensions.get("window").width
 
-
 const margin = Math.round(screenWidth * layout.margin)
-
 const separator = Math.round(2.0 * layout.border)
 
-const feedHeight = Math.round(screenHeight * (1.0 - layout.headerSize))
-const spacerHeight = Math.round(feedHeight * 0.3)
-const noticeHeight = Math.round(screenHeight * layout.headerSize)
+const noticeHeight = Math.round(screenWidth * layout.headerSize)
 const buttonHeight = noticeHeight - (4 * margin)
 
 
@@ -25,13 +19,14 @@ const feed = StyleSheet.create({
 
 	container: {
 		...general.container,
+		alignItems: "stretch",
 		backgroundColor: settings.colors.neutral
 	},
 
 	list: {
+		flex: 1,
 		minWidth: screenWidth,
 		maxWidth: screenWidth,
-		minHeight: feedHeight,
 	},
 
 	separator: {
@@ -44,8 +39,8 @@ const feed = StyleSheet.create({
 		...general.container,
 		minWidth: screenWidth,
 		maxWidth: screenWidth,
-		minHeight: spacerHeight,
-		maxHeight: spacerHeight,
+		minHeight: noticeHeight,
+		maxHeight: noticeHeight,
 	},
 
 	notice: {
