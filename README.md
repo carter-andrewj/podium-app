@@ -25,9 +25,9 @@ As the simulator with the simplest setup and the platform for which most develop
 
 To start the Expo app development server, run:
 
-	```shell
-	npm start
-	```
+   ```shell
+   npm start
+   ```
 
 And then, once the server is running, press either `i` (for iOS) or `a` (for Android) to launch the app in the corresponding simulator.
 
