@@ -1,17 +1,18 @@
 import Component from './component';
 
 
+
+
 export default class Page extends Component {
 
-	constructor() {
+	constructor(...args) {
 
-		super()
+		super(...args)
 
-		this.willFocus = null;
-		this.didFocus = null;
-		this.willBlur = null;
-		this.didBlur = null;
+		// State
+		this.isMounted = false
 
+		// Methods
 		this.pageWillMount = this.pageWillMount.bind(this)
 		this.pageDidMount = this.pageDidMount.bind(this)
 
@@ -25,82 +26,69 @@ export default class Page extends Component {
 	}
 
 
+
+
+// LIFECYCLE
+
 	componentWillMount() {
 
-		// Listen for pre-focus event
-		this.willFocus = this.props.navigation.addListener(
-			"willFocus",
-			payload => this.pageWillFocus(
-				payload.action ? payload.action.params || {} : {},
-				payload.lastState ? payload.lastState.params || {} : {}
-			)
-		)
+		// Setup listeners
+		this.props.navigator.willExit(this.pageWillBlur)
+		this.props.navigator.didExit(this.pageDidBlur)
+		this.props.navigator.willEnter(this.pageWillFocus)
+		this.props.navigator.didEnter(this.pageDidFocus)
 
-		// Listen for post-focus event
-		this.didFocus = this.props.navigation.addListener(
-			"didFocus",
-			payload => this.pageDidFocus(
-				payload.state ? payload.state.params || {} : {},
-				payload.lastState ? payload.lastState.params || {} : {}
-			)
-		)
-
-		// Listen for pre-blur event
-		this.willBlur = this.props.navigation.addListener(
-			"willBlur",
-			payload => this.pageWillBlur(
-				payload.state ? payload.state.params || {} : {},
-				payload.lastState ? payload.lastState.params || {} : {}
-			)
-		)
-
-		// Listen for post-blur event
-		this.didBlur = this.props.navigation.addListener(
-			"didBlur", payload => this.pageDidBlur(
-				payload.state ? payload.state.params || {} : {},
-				payload.lastState ? payload.lastState.params || {} : {}
-			)
-		)
-
+		// Start lifecycle
 		this.pageWillMount()
+		this.pageWillFocus(this.props.navigator.route.toJS())
 
 	}
 
 	componentDidMount() {
+		this.isMounted = true
 		this.pageDidMount()
 	}
 
+	componentWillUnmount() {
+		this.pageWillUnmount()
+		this.isMounted = false
+	}
 
+
+
+
+// OVERRIDE LIFECYCLE
 
 	pageWillMount() {}
 
 	pageDidMount() {}
 
-	pageWillFocus(params, lastParams) {}
+	async pageWillFocus(nav) { return true }
 
-	pageDidFocus(params, lastParams) {}
+	async pageDidFocus(nav) { return true }
 
-	pageWillBlur(params, lastParams) {}
+	async pageWillBlur(nav) { return true }
 
-	pageDidBlur(params, lastParams) {}
+	async pageDidBlur(nav) { return true }
 
 	pageWillUnmount() {}
 
 
 
-	componentWillUnmount() {
 
-		// Unmount screen
-		this.pageWillUnmount()
+// HELPERS
 
-		// Remove listeners
-		this.willFocus.remove()
-		this.didFocus.remove()
-		this.willBlur.remove()
-		this.didBlur.remove()
-
+	get isNavigationFocus() {
+		return this.props.navigator.depth === 0
 	}
 
+	get navigate() {
+		return {
+			to: (to, props) => this.props.navigator.navigate(to, props),
+			back: (depth = 1) => this.props.navigator.back(depth),
+			home: () => this.props.navigator.reset(),
+		}
+	}
 	
 
 }

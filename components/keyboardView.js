@@ -1,14 +1,14 @@
 import React from 'react';
 import Component from './component';
 import Constants from 'expo-constants';
+import { inject, observer } from 'mobx-react';
 import { Animated, Keyboard, Dimensions, Easing, View} from 'react-native';
 
-import styles from '../styles/styles';
-import settings from '../settings';
 
 
 
-
+@inject("store")
+@observer
 export default class KeyboardView extends Component {
 
 	constructor() {
@@ -27,8 +27,6 @@ export default class KeyboardView extends Component {
 		// Animation
 		this.keyboardOpen = false
 		this.offset = 0
-		this.statusBar = Constants.statusBarHeight
-		this.screen = Dimensions.get("window").height - this.statusBar
 		this.padding = new Animated.Value(0.0)
 
 	}
@@ -38,11 +36,16 @@ export default class KeyboardView extends Component {
 		Animated
 			.timing(this.padding, {
 				toValue: end,
-				delay: settings.layout.keyboardDelay,
-				duration: time - settings.layout.keyboardDelay,
+				delay: this.timing.keyboardDelay,
+				duration: time - this.timing.keyboardDelay,
 				easing: Easing.bezier(0.17, 0.59, 0.4, 0.77)
 			})
-			.start()
+			.start(({ finished }) => {
+				if (finished) {
+					let height = this.props.store.style.layout.screen.height - end
+					this.props.store.style.setVisibleHeight(height)
+				}
+			})
 	}
 
 
@@ -59,7 +62,7 @@ export default class KeyboardView extends Component {
 			} else {
 
 				// Calculate relative offset value
-				this.offset = this.props.offsetBottom * this.screen
+				this.offset = this.props.offsetBottom * this.layout.screen.height
 
 			}
 
@@ -71,7 +74,7 @@ export default class KeyboardView extends Component {
 
 		// If keyboard is closed, resize
 		if (!this.keyboardOpen) {
-			this.rescale(this.offset, initial ? 0 : settings.layout.moveTime)
+			this.rescale(this.offset, initial ? 0 : this.timing.move)
 		}
 
 	}
@@ -89,7 +92,7 @@ export default class KeyboardView extends Component {
 			"keyboardWillShow",
 			({ duration, endCoordinates }) => {
 				this.keyboardOpen = true
-				this.rescale(endCoordinates.height - this.statusBar, duration)
+				this.rescale(endCoordinates.height - this.layout.screen.statusBar, duration)
 			}
 		)
 
@@ -113,32 +116,42 @@ export default class KeyboardView extends Component {
 	}
 
 
+	componentWillUnmount() {
+		this.keyboardShow.remove()
+		this.keyboardHide.remove()
+	}
 
 
+
+// RENDER
 
 	render() {
 		return <View style={{
-				...styles.screen,
-				maxHeight: this.screen
+				...this.style.general.screen,
+				maxHeight: this.layout.screen.height
 			}}>
 			<Animated.View
 				style={{
-					...styles.container,
+					...this.style.general.container,
 					...this.props.style,
 					overflow: "hidden",
 					paddingTop: this.props.offsetTop,
 					paddingBottom: this.padding
 				}}>
-				<View style={styles.container}>
+				<View style={this.style.general.container}>
 					{this.props.children}
+				</View>
+				<View style={{
+						...this.style.general.container,
+						position: "absolute",
+						bottom: 0,
+						left: 0,
+						right: 0,
+					}}>
+					{this.props.footer}
 				</View>
 			</Animated.View>
 		</View>
-	}
-
-	componentWillUnmount() {
-		this.keyboardShow.remove()
-		this.keyboardHide.remove()
 	}
 
 }

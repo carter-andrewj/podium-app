@@ -1,10 +1,10 @@
 import { observable, computed } from 'mobx';
 
-import Entity from '../entity';
+import Index from './index';
 
 
 
-class TokenIndex extends Entity {
+class TokenIndex extends Index {
 
 
 	constructor(...args) {
@@ -14,7 +14,6 @@ class TokenIndex extends Entity {
 
 		// State
 		this.type = "Tokens"
-		this.state = observable.array()
 
 	}
 

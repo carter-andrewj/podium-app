@@ -101,7 +101,7 @@ class QuickProfile extends Component {
 						<View style={styles.quickProfile.header}>
 							<Text style={styles.profile.name}>
 								{ready ? 
-									this.activeUser.profile.displayName
+									this.activeUser.profile.name
 									: null
 								}
 							</Text>
@@ -132,13 +132,13 @@ class QuickProfile extends Component {
 											: null
 									}
 									style={styles.quickProfile.bio}>
-									{this.activeUser.profile.bio}
+									{this.activeUser.profile.about}
 								</Text>
 								<Text
 									onLayout={this.setHeight}
 									pointerEvents="none"
 									style={styles.quickProfile.dummy}>
-									{this.activeUser.profile.bio}
+									{this.activeUser.profile.about}
 								</Text>
 							</ScrollView>
 							: null

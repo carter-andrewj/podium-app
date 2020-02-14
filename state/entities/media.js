@@ -2,6 +2,8 @@ import { observable, computed } from 'mobx';
 
 import Entity from './entity';
 
+import { placeholder } from './utils';
+
 
 
 class Media extends Entity {
@@ -14,7 +16,6 @@ class Media extends Entity {
 
 		// State
 		this.type = "Media"
-		this.state = observable.Array()
 
 	}
 
@@ -22,7 +23,17 @@ class Media extends Entity {
 
 // GETTERS
 
+	@computed
+	@placeholder()
+	get mediaType() {
+		return this.state.get("type")
+	}
 
+	@computed
+	@placeholder()
+	get uri() {
+		return `${this.nation.mediaURL.get()}${this.address}.${this.mediaType}`
+	}
 
 
 }

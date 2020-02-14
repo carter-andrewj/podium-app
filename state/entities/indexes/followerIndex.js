@@ -1,9 +1,9 @@
 import { observable, computed } from 'mobx';
 
-import Entity from '../entity';
+import Index from './index';
 
 
-class FollowerIndex extends Entity {
+class FollowerIndex extends Index {
 
 
 	constructor(...args) {
@@ -13,7 +13,6 @@ class FollowerIndex extends Entity {
 
 		// State
 		this.type = "Followers"
-		this.state = observable.array()
 
 	}
 

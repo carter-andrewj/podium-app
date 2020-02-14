@@ -1,35 +1,40 @@
-import { observable, action, computed } from 'mobx';
+import { observable, action, computed, when } from 'mobx';
 
 import { Map } from 'immutable';
+
+import { placeholder } from './utils';
 
 
 
 
 class Entity {
 
-
-	constructor(parent) {
+	constructor(nation) {
 
 		// Store references to parent and session
-		this.parent = parent
-		this.nation = parent.nation
-		this.session = parent.session
-		this.client = parent.nation.socket
+		this.nation = nation
 
 		// State
+		this.isEntity = true
 		this.type = null					// NOTE: Child entities should set this to their server equivalent
-		this.state = null					// NOTE: Child entities should set this to an observable type
+		this.state = observable.map()		// NOTE: Child entities should set this to an observable type
 		this.address = null
-		this.complete = observable.box(false)
-		this.latest = observable.box(null)
+		this.loader = undefined
+
+		this.latest = observable.box(null)		// Last time data was received
+		this.updated = observable.box(null)		// Last time entity was written
+		this.created = observable.box(null)		// First time entity was written
+
+		this.parentage = observable.map()
 		this.history = observable.map()
-		this.attributes = observable.map()
+		this.attributes = observable.map({}, { deep: false })
+		this.wallet = observable.map({}, { deep: false })
 
 		// Sync
 		this.syncing = observable.box(false)	// True when new data is being processed
 		this.received = null
 		this.isSynced = observable.box(false)	// True when the entity is up to date
-		this.isReady = observable.box(false)	// True when the entity has synced at least once
+		this.hasSynced = observable.box(false)	// True when the entity has synced at least once
 
 		// Methods
 		this.fromAddress = this.fromAddress.bind(this)
@@ -37,10 +42,9 @@ class Entity {
 		this.sync = this.sync.bind(this)
 		this.unsync = this.unsync.bind(this)
 
+		this.whenReady = this.whenReady.bind(this)
+
 		this.receive = this.receive.bind(this)
-		this.setData = this.setData.bind(this)
-		this.setAttribute = this.setAttribute.bind(this)
-		this.setComplete = this.setComplete.bind(this)
 
 		this.act = this.act.bind(this)
 
@@ -48,9 +52,31 @@ class Entity {
 
 
 	@computed
-	get ready() {
-		return this.isReady.get()
+	get parent() {
+		let address = this.parentage.get("address")
+		if (!address) return undefined
+		return this.nation.get(this.parentage.get("type"), address)
 	}
+
+	get session() {
+		return this.nation.session
+	}
+
+	get client() {
+		return this.nation.client
+	}
+
+
+
+
+// GETTERS
+
+	@computed
+	get ready() {
+		return this.hasSynced.get()
+	}
+
+
 
 
 
@@ -66,6 +92,7 @@ class Entity {
 
 	}
 
+
 	get label() {
 		return `${this.type}:${this.address}`
 	}
@@ -77,18 +104,14 @@ class Entity {
 	sync() {
 		return new Promise((resolve, reject) => {
 
+			// Ignore for dummy entities
+			if (!this.address) resolve()
+
 			// Listen for data
 			this.client.on(this.address, this.receive)
 
 			// Listen for completion
-			this.completer = this.complete
-				.observe(change => {
-					if (change.newValue) {
-						this.setSynced()
-						this.completer()
-						resolve()
-					}
-				})
+			this.completer = when(() => this.ready, resolve)
 
 			// Request entity data from server
 			this.nation
@@ -99,7 +122,10 @@ class Entity {
 				.then(() => this.client
 					.emit(this.address, { type: "sync" })
 				)
-				.catch(reject)
+				.catch(error => {
+					throw `SERVER ERROR: ${error}`
+					reject(error)
+				})
 
 		})
 	}
@@ -120,13 +146,29 @@ class Entity {
 
 	@action.bound
 	setSynced() {
-		this.isReady.set(true)
+		if (!this.hasSynced.get()) this.hasSynced.set(true)
 		this.isSynced.set(true)
 	}
+
 
 	@action.bound
 	clearSynced() {
 		this.isSynced.set(false)
+	}
+
+
+	async whenReady(callback) {
+
+		// Wait for entity to be ready
+		await when(() => this.ready)
+
+		// Run and return callback if provided
+		if (callback) {
+			return callback(this)
+		} else {
+			return this
+		}
+
 	}
 
 
@@ -154,40 +196,30 @@ class Entity {
 			let next = last
 				.then(() => {
 
-					// Set flag
-					this.syncing.set(true)
-
 					// Update state
 					this.setData(data)
 
 					// Update attributes
 					return Promise.all(Map(data.attributes)
 						.filter((_, id) => !this.attributes.has(id))
-						.map(({ type, address }, id) => {
+						.map(async ({ type, address }, id) => {
 
 							// Cache attribute
 							this.setAttribute(id, address)
 
 							// Subscribe to attribute
-							return this.session.subscribe(type, address)
+							let attribute = this.nation.get(type, address)
+
+							// Return
+							return when(() => attribute.ready)
 
 						})
-						.valueSeq()
+						.toList()
+						.toJS()
 					)
 
 				})
-				.then(() => {
-
-					// Set complete flag
-					this.setComplete(data.complete)
-
-					// Clear syncing flag
-					this.syncing.set(false)
-
-					// Set synced flag
-					this.isSynced.set(true)
-
-				})
+				.then(this.setSynced)
 				.catch(console.error)
 
 			// Save promise
@@ -198,57 +230,96 @@ class Entity {
 	}
 
 
-	@action
-	setData({ timestamp, history, state, complete }) {
+	@action.bound
+	setData({ timestamp, history, state, wallet, parent, created, updated }) {
 
 		// Update timestamp
 		this.latest.set(timestamp)
+		if (this.updated.get() !== updated) this.updated.set(updated)
+		if (!this.created.get()) this.created.set(created)
+
+		// Update parent
+		if (this.parentage.get("address") !== parent.address) {
+			this.parentage.set("address", parent.address)
+			this.parentage.set("type", parent.type)
+		}
+
+		// Update wallet
+		if (wallet) this.wallet.replace(wallet)
 
 		// Update history
 		this.history.replace(history)
 
 		// Update state
-		this.state.replace(state)
+		this.setState(state)
 
 	}
 
 
-	@action
+	@action.bound
+	setState(state) {
+		this.state.merge(state)
+	}
+
+
+	@action.bound
 	setAttribute(id, entity) {
-
-		// Store new entity
 		this.attributes.set(id, entity)
-
 	}
 
 
-	@action
-	setComplete(complete) {
-		this.complete.set(complete)
-	}
+
 
 
 
 // ACT
 
+	get asObject() {
+		return {
+			isEntity: true,
+			type: this.type,
+			address: this.address
+		}
+	}
+
+
 	act(action, label, ...args) {
 		return new Promise((resolve, reject) => {
+
+			// Handle entity arguments
+			let inputs = args.map(a => (a && a.isEntity) ? a.asObject : a)
+
+			// Send task
 			this.nation
 				.task(
 					this.address,
 					{
 						type: "write",
 						action: action,
-						args: args,
+						args: inputs,
 						auth: this.session.auth
 					},
 					label
 				)
 				.then(resolve)
 				.catch(reject)
+
 		})
 	}
 
+
+
+
+
+// LISTENERS
+
+	intercept(callback) {
+		return this.state.intercept(callback)
+	}
+
+	observe(callback) {
+		return this.state.observe(callback)
+	}
 
 
 

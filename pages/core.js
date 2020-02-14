@@ -1,22 +1,22 @@
 import React from 'react';
-
-import { Text, View, TextInput, Dimensions, Animated, FlatList,
-		 Easing, PanResponder, TouchableWithoutFeedback } from 'react-native';
-import { FontAwesomeIcon } from 'expo-fontawesome';
+import { View, Text, Animated, Easing } from 'react-native';
+import { computed } from 'mobx';
 import { inject, observer } from 'mobx-react';
-import { createStackNavigator, NavigationActions } from 'react-navigation';
 
-import globals from '../globals';
-import settings from '../settings';
-import styles from '../styles/styles';
+import Animator from '../utils/animator';
 
+import Navigator from '../components/navigator';
 import Page from '../components/page';
 import Screen from '../components/screen';
+import TaskBar from '../components/tasks/taskBar';
 
-import Button from '../components/buttons/button';
+import Menu from './drawers/menu/menu';
+import Alerts from './drawers/alerts/alerts';
+import Nation from './drawers/nation/nation';
+import Search from './drawers/search/search';
 
 import Feed from './posts/feed';
-import CreatePost from './posts/createPost';
+import Compose from './posts/compose';
 import PostPage from './posts/postPage';
 
 import ProfilePage from './profiles/profilePage';
@@ -25,68 +25,10 @@ import FollowersPage from './profiles/followersPage';
 import FollowingPage from './profiles/followingPage';
 import IntegrityPage from './profiles/integrityPage';
 
-import QuickProfile from './profiles/quickProfile';
-
-import QuickAlerts from './alerts/quickAlerts';
-import AlertsPage from './alerts/alertsPage';
-
-import QuickSearch from './search/quickSearch';
-import SearchPage from './search/searchPage';
-
-import ConstitutionPage from './constitution/constitutionPage';
-
 import HelpPage from './help/helpPage';
 import SettingsPage from './settings/settingsPage';
 
-
-
-const Pages = createStackNavigator(
-
-	// Pages
-	{
-
-		Feed: Feed,
-		CreatePost: CreatePost,
-		Post: PostPage,
-
-		Profile: ProfilePage,
-		Wallet: WalletPage,
-		Followers: FollowersPage,
-		Following: FollowingPage,
-		Integrity: IntegrityPage,
-
-		Alerts: AlertsPage,
-
-		Search: SearchPage,
-
-		Constitution: ConstitutionPage,
-
-		Help: HelpPage,
-		Settings: SettingsPage,
-
-	},
-
-	// Options
-	{
-		initialRouteName: "Feed",
-		headerMode: "none",
-		cardStyle: {
-			backgroundColor: settings.colors.neutralPalest
-		},
-		cardShadowEnabled: false,
-		transitionConfig : () => ({
-			transitionSpec: {
-				duration: 0,
-				timing: Animated.timing,
-				easing: Easing.step0,
-			},
-		}),
-		defaultNavigationOptions: {
-			gesturesEnabled: false
-		}
-	}
-
-)
+import Button from '../components/buttons/button';
 
 
 
@@ -94,442 +36,234 @@ const Pages = createStackNavigator(
 
 @inject("store")
 @observer
-class Core extends Page {
+export default class Core extends Page {
 
-
-	static router = Pages.router;
 
 
 	constructor() {
 
-		super()
+		// State
+		super({ open: null })
 
-		this.span = Math.round(Dimensions.get("window").width *
-			settings.layout.drawerSize),
-		this.location = 0
-		this.pan = new Animated.ValueXY()
-		this.animUpdate = false
+		// Utilities
+		this.drawers = {}
+		this.animator = new Animator().configure("spring")
 
-		this.state = {
-			location: 0,
-			banner: [],
-		}
+		// Methods
+		this.control = this.control.bind(this)
+		this.toggle = this.toggle.bind(this)
 
-		this.nav = null;
+		// Navigation
+		this.pages = {
 
-		this.searchControls = {}
-		this.alertControls = {}
+			Feed: { Page: Feed },
+			Compose: { Page: Compose },
+			Post: { Page: PostPage },
 
-		this.beginPan = this.beginPan.bind(this)
-		this.resetPan = this.resetPan.bind(this)
-		this.movePan = this.movePan.bind(this)
-		this.endPan = this.endPan.bind(this)
+			Profile: { Page: ProfilePage },
+			Wallet: { Page: WalletPage },
+			Followers: { Page: FollowersPage },
+			Following: { Page: FollowingPage },
+			Integrity: { Page: IntegrityPage },
 
-		this.setLocation = this.setLocation.bind(this)
-		this.panTo = this.panTo.bind(this)
-		this.openLeft = this.openLeft.bind(this)
-		this.openRight = this.openRight.bind(this)
-		this.closeDrawer = this.closeDrawer.bind(this)
+			Help: { Page: HelpPage },
+			Settings: { Page: SettingsPage },
 
-		this.navigate = this.navigate.bind(this)
-		this.signOut = this.signOut.bind(this)
-		this.quickSearch = this.quickSearch.bind(this)
-		this.quickAlerts = this.quickAlerts.bind(this)
-
-		this.setBanner = this.setBanner.bind(this)
-
-		// Set up screen pan
-		this.panResponder = PanResponder.create({
-			onMoveShouldSetPanResponder: this.beginPan,
-			onPanResponderGrant: this.resetPan,
-			onPanResponderMove: this.movePan,
-			onPanResponderRelease: this.endPan,
-			onResponderTerminate: () => { globals.screenLock = false }
-		})
-
-	}
-
-
-
-// PAN RESPONSES
-
-	beginPan(_, { dx, dy }) {
-
-		// Return true if already locking screen
-		if (globals.screenLock === "core") {
-			return true
-
-		// Otherwise, check if screen is already locked
-		} else if (globals.screenLock) {
-			return false
-
-		// Otherwise, check if core should lock the screen
-		} else if (Math.abs(dx) > Math.max(
-				settings.layout.panStart * 2,
-				Math.abs(dy)
-			)) {
-			this.searchControls.blur()
-			globals.screenLock = "core"
-			return true
-
-		// Otherwise, do nothing
-		} else {
-			return false
 		}
 
 	}
 
 
-	resetPan() {
-		this.pan.setOffset({
-			x: -1.0 * this.location * this.span,
-			y: 0
-		})
-		this.pan.setValue({
-			x: 0,
-			y: 0
-		})
-	}
+// LIFECYCLE
 
-
-	movePan(event, gesture) {
-
-		// Calculate location
-		const delta = -1.0 * gesture.dx
-		const decay = settings.layout.overScroll
-		let beyond;
-
-		// Decay movement beyond left border
-		if (this.location === -1 && delta < 0) {
-			beyond = -1.0 * Math.pow(Math.abs(delta), decay)
-
-		// Decay movement beyond right border
-		} else if (this.location === 1 && delta > 0) {
-			beyond = Math.pow(delta, decay)
-		}
-
-		// Animate decay beyond borders
-		if (beyond) {
-			this.pan
-				.setValue({ x: -1 * beyond, y: 0 })
-
-		// Otherwise, move with gesture
-		} else {
-			let anim = Animated
-				.event([null, { dx: this.pan.x }])
-			return anim(event, gesture)
-		}
-
-	}
-
-
-	endPan(_, { dx, vx }) {
-
-		// Release screenlock
-		globals.screenLock = false
-
-		// Get threshold variables
-		const xLimit = this.span * settings.layout.xLimit
-		const vLimit = settings.layout.vLimit
-		const x = -1.0 * dx
-		const v = -1.0 * vx
-
-		// Calculate destination
-		let destination = 0;
-		if (this.location > -1 && (
-				(x < (-1.0 * xLimit)) ||
-				(v < (-1.0 * vLimit))
-			)) {
-			destination = -1
-		} else if (this.location < 1 && (
-				(x > xLimit) ||
-				(v > vLimit)
-			)) {
-			destination = 1
-		}
-
-		// Animate window
-		this.panTo(destination, false)
-
+	componentDidUpdate() {
+		this.animator.play()
 	}
 
 
 
 
-// PAN HELPERS
+// DRAWER CONTROLS
 
-	setLocation() {
-		if (this.location !== this.state.location) {
-			this.animUpdate = true
-			this.updateState(
-				state => state.set("location", this.location),
-				() => this.animUpdate = false
-			)
+	get open() {
+		return this.getState("open")
+	}
+
+	control(id) {
+		return controls => {
+			this.drawers[id] = { id, ...controls }
 		}
 	}
 
+	get openDrawer() {
 
-	panTo(x, reset=true) {
+		// Get open drawers
+		let open = Object
+			.values(this.drawers)
+			.filter(d => d.isOpen())
 
-		// Set pan location
-		if (reset) { this.resetPan() }
-		this.location += x
-
-		// Stop active animation
-		this.pan.stopAnimation(this.setLocation)
-
-		// Move window
-		return new Promise(resolve => {
-			Animated
-				.spring(this.pan, {
-					toValue: {
-						x: -1.0 * x * this.span,
-						y: 0
-					},
-					bounciness: settings.layout.panBounce,
-				})
-				.start(() => {
-					this.setLocation()
-					resolve()
-				})
-		})
+		// Return draw, if open, otherwise null
+		return (open.length > 0) ?
+			open[0] :
+			{ close: () => null }
 
 	}
 
+	toggle(id) {
 
-	openLeft() {
-		return this.panTo(-1)
+		// Check if a draw is already open
+		let current = this.openDrawer
+
+		// Close current drawer
+		if (current) current.close()
+
+		// Open new drawer
+		if (!current || current.id !== id) this.drawers[id].open()
+
+		// Play animation
+		this.animator.play()
+
 	}
-
-
-	openRight() {
-		return this.panTo(1)
-	}
-
-
-	closeDrawer() {
-		this.searchControls.blur()
-		return this.panTo(-1 * this.location)
-	}
-
 
 
 
 // NAVIGATION
 
-	navigate(to, params={}) {
-		this.closeDrawer()
-		super.navigate(to, params)
-	}
-
-	signOut() {
-		this.props.navigation.popToTop()
-	}
-
-	quickSearch() {
-		this.openRight()
-		this.searchControls.focus()
-	}
-
-	quickAlerts() {
-		this.alertControls.filter("all")
-		this.alertControls.resetScroll()
-		this.openLeft()
+	@computed
+	get current() {
+		let route = this.store.navigation.routes.get("core")
+		if (!route || !route.get("current")) return undefined
+		return route.get("current")[1]
 	}
 
 
-
-
-
-// ELEMENTS
-
-	setBanner(...args) {
-		let banner = args.map(b => {
-			switch (b) {
-
-				// Spacer
-				case "spacer":
-					return <View style={styles.container} />
-
-				// Back button
-				case "back":
-					return <Button
-						key="banner-back"
-						icon="arrow-left"
-						onPress={() => this.nav.props.navigation.goBack(null)}
-					/>
-
-				// Feed button
-				case "alerts":
-					return <Button
-						key="banner-alerts"
-						icon="bell"
-						onPress={this.quickAlerts}
-					/>
-
-				// New Post button
-				case "post":
-					return <Button
-						key="banner-post"
-						icon="comment"
-						onPress={() => this.navigate("CreatePost")}
-					/>
-
-				// Quick Search button
-				case "search":
-					return <Button
-						key="banner-search"
-						icon="search"
-						onPress={this.quickSearch}
-					/>
-
-				// Feed button
-				case "feed":
-					return <Button
-						key="banner-feed"
-						icon="list"
-						onPress={() => this.navigate("Feed")}
-					/>
-
-				// Provided button
-				default:
-					return b
-
-			}
-		})
-		this.updateState(state => state.set("banner", banner))
+	get navigatePage() {
+		return {
+			to: (to, props) => {
+				this.openDrawer.close()
+				this.navigator.navigate(to, props)
+			},
+			back: (depth = 1) => {
+				this.openDrawer.close()
+				this.navigator.back(depth)
+			},
+			home: () => {
+				this.openDrawer.close()
+				this.navigator.reset()
+			},
+		}
 	}
-
 
 
 
 // RENDER
 
-	render() {
+	get footer() {
+		return <View style={this.style.core.footer}>
 
-		const { navigation } = this.props;
+			<Button
+				containerStyle={this.style.core.navigationButton}
+				onPress={() => this.toggle("menu")}
+				icon="user"
+				iconSize={this.layout.core.footer.icons.small}
+			/>
 
-		const transform = this.pan.getTranslateTransform()[0]
+			<Button
+				containerStyle={this.style.core.navigationButton}
+				onPress={() => this.toggle("alerts")}
+				icon="bell"
+				iconSize={this.layout.core.footer.icons.medium}
+			/>
 
-		return <Screen style={{
-				...styles.container,
-				backgroundColor: settings.colors.white,
-			}}>
+			{this.current === "Feed" ?
+				<Button
+					containerStyle={this.style.core.navigationButton}
+					onPress={() => this.navigatePage.to("Compose")}
+					icon="comment-dots"
+					iconSize={this.layout.core.footer.icons.large}
+				/>
+				:
+				<Button
+					containerStyle={this.style.core.navigationButton}
+					onPress={() => this.navigatePage.home()}
+					icon="comments"
+					iconSize={this.layout.core.footer.icons.large}
+				/>
+			}
 
-			<Animated.View
-				{ ...this.panResponder.panHandlers }
-				style={{
-					...styles.layout.container,
-					marginLeft: -1 * this.span,
-					transform: [ transform ]
-				}}>
+			<Button
+				containerStyle={this.style.core.navigationButton}
+				onPress={() => this.toggle("nation")}
+				icon="globe"
+				iconSize={this.layout.core.footer.icons.medium}
+			/>
 
+			<Button
+				containerStyle={this.style.core.navigationButton}
+				onPress={() => this.toggle("search")}
+				icon="search"
+				iconSize={this.layout.core.footer.icons.small}
+			/>
 
-
-
-				<View style={styles.layout.leftDrawer}>
-
-					<QuickAlerts
-						navigate={this.navigate}
-						controller={control => this.alertControls = control}
-					/>
-
-					<QuickProfile
-						navigate={this.navigate}
-					/>
-
-				</View>
-
-
-
-
-				<View style={styles.layout.main}>
-
-					<View style={styles.layout.mainHeader}>
-						{this.state.banner}
-					</View>
-
-					<View style={styles.layout.mainContent}>
-						<Pages
-							ref={ref => this.nav = ref}
-							navigation={navigation}
-							screenProps={{
-								animUpdate: this.animUpdate,
-								setBanner: this.setBanner
-							}}
-						/>
-					</View>
-
-					{this.state.location !== 0 ?
-						<TouchableWithoutFeedback
-							onPress={this.closeDrawer}>
-							<View style={styles.layout.cover} />
-						</TouchableWithoutFeedback>
-						: null
-					}
-
-				</View>
-
-
-
-
-				<View style={styles.layout.rightDrawer}>
-
-					<QuickSearch
-						navigate={this.navigate}
-						controller={controls => this.searchControls = controls}
-					/>
-
-					<View style={styles.layout.rightFooter}>
-
-						<View style={styles.container} />
-
-						<View style={styles.layout.links}>
-
-							<Button
-								onPress={() => this.navigate("Constitution")}
-								icon="university"
-								iconSize={settings.iconSize.largish}
-							/>
-
-							<Button
-								onPress={() => this.navigate("Help")}
-								icon="question"
-								iconSize={settings.iconSize.largish}
-							/>
-
-							<Button
-								onPress={() => this.navigate("Settings")}
-								icon="cogs"
-								iconSize={settings.iconSize.largish}
-							/>
-
-							<Button
-								onPress={this.signOut}
-								round={true}
-								size={1.1}
-								style={styles.layout.signOut}
-								icon="sign-out-alt"
-								iconSize={settings.iconSize.largish}
-								iconColor={settings.colors.bad}
-							/>
-
-						</View>
-
-					</View>
-
-				</View>
-
-
-
-
-			</Animated.View>
-
-		</Screen>
-		
+		</View>
 	}
 
 
-}
 
-export default Core;
+	render() {
+
+		return <Screen
+			offsetBottom={this.layout.core.footer.height}
+			footer={this.footer}>
+
+			<View style={this.style.core.body}>
+
+				<View style={this.style.core.content}>
+					<Navigator
+						name="core"
+						pages={this.pages}
+						controller={controls => this.navigator = controls}
+						startingPage="Feed"
+					/>
+					<View
+						pointerEvents="box-none"
+						style={this.style.core.overlay}>
+						<TaskBar />
+					</View>
+				</View>
+
+				<Menu
+					animator={this.animator}
+					open={this.open === "menu"}
+					controller={this.control("menu")}
+					navigate={this.navigatePage}
+					signOut={this.props.signOut}
+				/>
+
+				<Alerts
+					animator={this.animator}
+					open={this.open === "alerts"}
+					controller={this.control("alerts")}
+					navigate={this.navigatePage}
+				/>
+
+				<Nation
+					animator={this.animator}
+					open={this.open === "nation"}
+					controller={this.control("nation")}
+					navigate={this.navigatePage}
+				/>
+
+				<Search
+					animator={this.animator}
+					open={this.open === "search"}
+					controller={this.control("search")}
+					navigate={this.navigatePage}
+				/>
+
+			</View>
+
+		</Screen>
+	}
+
+}

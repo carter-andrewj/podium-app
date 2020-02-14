@@ -1,8 +1,22 @@
+
+
+// DEPRECIATED //
+// DEPRECIATED //
+// DEPRECIATED //
+// DEPRECIATED //
+// DEPRECIATED //
+// DEPRECIATED //
+// DEPRECIATED //
+// DEPRECIATED //
+// DEPRECIATED //
+// DEPRECIATED //
+
+
 const settings = {
 
 	server: {
-		local: true,
-		url: "http://ec2-184-72-129-237.compute-1.amazonaws.com/"
+		local: false,
+		url: "https://api.podium-network.com"
 	},
 
 	fonts: {
@@ -32,13 +46,16 @@ const settings = {
 		white: "#FEFEFE",
 		black: "#010101",
 
-		good: "#00AA22",	// Green
+		pod: "#00AA22",
+		aud: "#AA0088",
+
+		good: "#0088AA",	// Blue (not green - colour blindness)
+		warn: "#DD8800",	// Amber
 		bad: "#AA2200",		// Red
 
 		note: "#AA0088",	// Purple
 		info: "#0088AA",	// Blue
 		other: "#AA8800",	// Tan
-		warn: "#DD8800",	// Amber
 
 	},
 
@@ -46,7 +63,7 @@ const settings = {
 		small: 14,
 		smallish: 18,
 		medium: 22,
-		largish: 28,
+		largish: 25,
 		large: 32
 	},
 
@@ -92,30 +109,32 @@ const settings = {
 
 		// Core layout
 		drawerSize: 0.9,		// Width of left/right nav drawers (% of screen width)
-		headerSize: 0.17,		// Height of navigation header (% of screen width)
-		footerSize: 0.15,		// Height of footers (% of screen width)
-		border: 1.0,			// Width of borders between layout segments (pixels)
-		margin: 0.02,			// Margin used on core nav components (% of screen width)
+		navHeight: 0.17,		// Height of navigation footer (% of screen width)
+		headerHeight: 0.14,		// Height of page headers and search input (% of screen width)
 
 		// Pan Responder
 		panStart: 5,			// Number of pixels moved before pan locks the screen
-		xLimit: 0.25,			// Scroll limit (% of screen width) before auto-pan moves to next stable point upon release
+		xLimit: 0.2,			// Scroll limit (% of screen width) before auto-pan moves to next stable point upon release
 		vLimit: 0.5,			// Velocity limit before auto-pan moves to next stable point upon release
-		panBounce: 6,			// Bounciness of auto-pan animation
-		overScroll: 0.7,		// Decay factor for pan when scrolling outside of screen bounds
+		panBounce: 7,			// Bounciness of auto-pan animation
+		panTime: 150,			// Effective duration of a pan animation (ms)
+		overScroll: 0.6,		// Decay factor for pan when scrolling outside of screen bounds
 		deadZone: 10,			// Boundary on edges of pannable object where pan will be ignored (pixels)
 
 		// General
+		border: 1.0,			// Width of borders between layout segments (pixels)
+		margin: 0.02,			// Margin used on core nav components (% of screen width)
 		corner: 0.38,			// Border radius of images with 1 corner rounded (% of image width)
 		button: 0.07,			// Size of standard square HUD button (% of screen width)
 		buttonIcon: 0.045,		// Size of icon in standard square HUD buton (% of screen width)
-		largeButton: 0.12,		// Size of large HUD button ($ of screen width)
+		largeButton: 0.12,		// Size of large HUD button (% of screen width)
 
 		// Timings
 		speed: 300,				// Speed of movement when calculating distance animations (px/s)
 		moveTime: 100,			// Duration of movement/resize animations (ms)
-		spinTime: 800,			// Spin duration for loading icon (ms)
-		fadeTime: 300,			// Fade in/out of fader elements (ms)
+		spinPause: 150,			// Duration of pause between spin cycles (ms)
+		spinTime: 1600,			// Spin duration for loading icon (ms)
+		fadeTime: 100,			// Fade in/out of fader elements (ms)
 
 		// Lobby
 		lobbyNavDelay: 4000,	// Delay before showing signin/register buttons in lobby (ms)
@@ -126,8 +145,9 @@ const settings = {
 		quickProfileCap: 0.8,	// Maximum size of quick profile element in left drawer (% of screen width)
 		quickProfileName: 0.12,	// Height of name element in quick profile (% of screen width)
 
-		// Quick Search
-		quickSearchIcon: 15,	// Size of icons in quicksearch input (pixels)
+		// Search
+		searchHeight: 0.1,		// Size of search input box (% of screen width)
+		searchIcon: 15,			// Size of icons in quicksearch input (pixels)
 
 		// Posts
 		postHeight: 0.15,		// Minimum height of a post (% of screen height)

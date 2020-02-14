@@ -21,13 +21,11 @@ import TermsOfService from './elements/termsOfService';
 import Register from './elements/register';
 
 import InputDisplayName from './elements/displayName';
-import InputPicture from './elements/picture';
+import InputAvatar from './elements/avatar';
 import InputBio from './elements/bio';
 
 import Welcome from './elements/welcome';
 
-import styles from '../../styles/styles';
-import settings from '../../settings';
 
 
 
@@ -37,10 +35,8 @@ export default class Lobby extends Page {
 
 	constructor() {
 
-		super()
-
-		// Initial state
-		this.state = {
+		// State
+		super({
 			mode: undefined,
 			current: 0,
 			focus: 0,
@@ -48,7 +44,7 @@ export default class Lobby extends Page {
 			complete: false,
 			nav: false,
 			exit: false
-		}
+		})
 
 		// Refs
 		this.references = Map()
@@ -88,7 +84,7 @@ export default class Lobby extends Page {
 			Register,
 
 			InputDisplayName,
-			InputPicture,
+			InputAvatar,
 			InputBio,
 
 			Welcome
@@ -104,26 +100,43 @@ export default class Lobby extends Page {
 		return this.session.registerData
 	}
 
+	get mode() {
+		return this.getState("mode")
+	}
+
+	get current() {
+		return this.getState("current")
+	}
+
+	get focus() {
+		return this.getState("focus")
+	}
+
+	get showNav() {
+		return this.getState("nav")
+	}
+
+	get exiting() {
+		return this.getState("exit")
+	}
+
+	get locked() {
+		return this.getState("lock")
+	}
+
+	get complete() {
+		return this.getState("complete")
+	}
+
 
 
 
 // LIFECYCLE
 
-	pageDidMount() {
-
-		// Only show the sign-in button after 4 seconds
-		this.navTimer = setTimeout(
-			() => this.updateState(state => state.set("nav", true)),
-			settings.layout.lobbyNavDelay
-		)
-
-	}
-
-
-	pageWillFocus() {
+	async pageWillFocus() {
 
 		// Set initial mode
-		if (this.params && this.params.signIn) {
+		if (this.props.mode === "signin") {
 			this.setMode("signin")
 		} else {
 			this.setMode("register")
@@ -132,10 +145,16 @@ export default class Lobby extends Page {
 	}
 
 
-	pageDidFocus() {
+	async pageDidFocus() {
+
+		// Only show the sign-in button after 4 seconds
+		this.navTimer = setTimeout(
+			() => this.updateState(state => state.set("nav", true)),
+			this.settings.lobby.navigationDelay
+		)
 
 		// Restore focus to current stage
-		this.setFocus(this.state.current)
+		this.setFocus(this.current)
 
 	}
 
@@ -148,10 +167,18 @@ export default class Lobby extends Page {
 	}
 
 
-	pageWillBlur() {
+	async pageWillBlur() {
 
 		// Clear focus from current element
 		this.clearFocus()
+
+	}
+
+
+	async pageDidBlur() {
+
+		// Hide navigation
+		this.updateState(state => state.set("nav", false))
 
 	}
 
@@ -184,22 +211,22 @@ export default class Lobby extends Page {
 			() => {
 
 				// Sign in
-				if (this.state.mode === "signin") {
+				if (this.mode === "signin") {
 
 					// Start sign-in after password
-					if (this.state.current === 3) this.signIn()
+					if (this.current === 3) this.signIn()
 
 				// Register
 				} else {
 
 					// Start registration process after Submit
-					if (this.state.current === 6) this.register()
+					if (this.current === 6) this.register()
 
 					// Start profile update after bio
-					if (this.state.current === 9) this.profile()
+					if (this.current === 9) this.profile()
 
 					// End registration
-					if (this.state.current === 10) this.exit()
+					if (this.current === 10) this.exit()
 
 				}
 
@@ -230,12 +257,12 @@ export default class Lobby extends Page {
 						this.data.clear()
 
 						// Navigate to core
-						this.navigate("Core")
+						this.navigate.to("Core")
 
 					}
 
 				),
-				settings.layout.transitionTime
+				this.timing.transition
 			)
 
 		)
@@ -292,7 +319,8 @@ export default class Lobby extends Page {
 		// Retreive profile data
 		let profile = {
 			displayName: this.data.get("name").get("value"),
-			//picture: this.data.get("picture").get("value"),
+			picture: this.data.get("avatar").get("value"),
+			pictureType: this.data.get("avatar").get("type"),
 			about: this.data.get("about").get("value")
 		}
 
@@ -377,9 +405,14 @@ export default class Lobby extends Page {
 
 	@action.bound
 	setError(message) {
-		let target = (this.state.mode === "register") ? "alias" : "passphrase"
+
+		// Check where to display the error
+		let target = (this.mode === "register") ? "alias" : "passphrase"
+
+		// Set error
 		this.data.get(target).set("error", true)
 		this.data.get(target).set("errorMessage", message)
+
 	}
 
 
@@ -415,61 +448,61 @@ export default class Lobby extends Page {
 	render() {
 
 		return <Screen
-			style={styles.lobby.body}
-			offsetBottom={this.state.current < 3 ?
-				settings.layout.lobbyFooter
+			style={this.style.lobby.body}
+			offsetBottom={this.current < 3 ?
+				this.layout.core.footer.height
 				: null
 			}>
 
-			<View style={styles.lobby.nav}>
+			<View style={this.style.lobby.navigation}>
 
 				<FadingView
 					animator={this.animator}
-					style={{ alignItems: "flex-start" }}
-					show={this.state.nav &&
-						this.state.mode === "signin" &&
-						!this.state.exit
+					style={this.style.lobby.navigationLeft}
+					show={this.showNav &&
+						this.mode === "signin" &&
+						!this.exiting
 					}>
 					<Button
-						style={styles.lobby.registerButton}
-						color={settings.colors.white}
+						style={this.style.lobby.registerButton}
+						color={this.colors.white}
 						label="register"
-						labelStyle={styles.lobby.navText}
-						onPress={this.state.nav ? () => this.setMode("register") : null}
+						labelStyle={this.style.lobby.navigationText}
+						onPress={this.showNav ? () => this.setMode("register") : null}
 					/>
 				</FadingView>
 
 				<FadingView
 					animator={this.animator}
-					style={{ alignItems: "flex-end" }}
-					show={this.state.nav &&
-						this.state.mode === "register" &&
-						!this.state.exit
+					style={this.style.lobby.navigationRight}
+					show={this.showNav &&
+						this.mode === "register" &&
+						!this.exiting
 					}>
 					<Button
-						style={styles.lobby.signInButton}
-						color={settings.colors.white}
+						style={this.style.lobby.signInButton}
+						color={this.colors.white}
 						label="sign in"
-						labelStyle={styles.lobby.navText}
-						onPress={this.state.nav ? () => this.setMode("signin") : null}
+						labelStyle={this.style.lobby.navigationText}
+						onPress={this.showNav ? () => this.setMode("signin") : null}
 					/>
 				</FadingView>
 
 			</View>
 
-			{this.state.mode ?
+			{this.mode ?
 				this.order.map(
 					(Component, i) => <Component
 
 						key={`register-input-${i}`}
 
-						mode={this.state.mode}
-						exit={this.state.exit}
+						mode={this.mode}
+						exit={this.exiting}
 
 						index={i}
-						current={this.state.current}
-						focus={this.state.focus}
-						lock={this.state.lock}
+						current={this.current}
+						focus={this.focus}
+						lock={this.locked}
 
 						animator={this.animator}
 
@@ -478,7 +511,7 @@ export default class Lobby extends Page {
 
 						data={this.data}
 						next={this.next}
-						complete={this.state.complete}
+						complete={this.complete}
 
 					/>
 				)

@@ -4,19 +4,12 @@ import io from 'socket.io-client';
 
 import { v4 as uuid } from 'uuid';
 
-import settings from '../settings';
+import { getEntity } from './entities/entities';
 
 
 
 
-let url;
-if (!settings.server.local) {
-	url = settings.server.url
-} else if (Platform.OS === "android") {
-	url = "http://10.0.2.2:3000"
-} else {
-	url = "http://localhost:3000"
-}
+
 
 
 
@@ -26,27 +19,80 @@ export default class Nation {
 
 		// Refs
 		this.store = store
+		this.nation = this
 
 		// State
-		this.socket = null
+		this.client = null
 		this.tasks = observable.map({}, { name: "tasks" })
+
 		this.name = observable.box(undefined, { name: "nation" })
+		this.founderAddress = observable.box(undefined, { name: "founder address" })
+		this.domainAddress = observable.box(undefined, { name: "domain address" })
+
+		this.mediaURL = observable.box(undefined, { name: "mediaURL" })
+
 		this.error = observable.box(undefined, { name: "error" })
+
+		this.entities = observable.map({}, { name: "entities" })
+		this.alerts = observable.map({}, { name: "alerts" })
 
 		// Methods
 		this.connect = this.connect.bind(this)
-		this.disconnect = this.disconnect.bind(this)
+		this.reset = this.reset.bind(this)
 
 		this.task = this.task.bind(this)
 
 		this.getNation = this.getNation.bind(this)
 
+		this.seenAlerts = this.seenAlerts.bind(this)
+
+		this.search = this.search.bind(this)
+		this.find = this.find.bind(this)
+
+		this.get = this.get.bind(this)
+
 	}
 
+
+
+
+	get url() {
+		if (this.store.config.api) {
+			return this.store.config.api
+		} else if (Platform.OS === "android") {
+			return "http://10.0.2.2:3000"
+		} else {
+			return "http://localhost:3000"
+		}
+	}
+
+
+
+
+	get session() {
+		return this.store.session
+	}
 
 	@computed
 	get live() {
 		return this.name.get() ? true : false
+	}
+
+	@computed
+	get founder() {
+		if (this.founderAddress.get())
+			return this.get("user", this.founderAddress.get())
+	}
+
+	@computed
+	get domain() {
+		if (this.domainAddress.get())
+			return this.get("domain", this.domainAddress.get())
+	}
+
+	@computed
+	get activeUser() {
+		return this.session.user
 	}
 
 
@@ -60,9 +106,11 @@ export default class Nation {
 			// Pass error to callback, if required
 			if (callback) {
 				callback(error)
-			} else {
-				throw error
 			}
+
+			console.error(error)
+
+			return false
 
 		}
 	}
@@ -72,24 +120,29 @@ export default class Nation {
 
 // CONNECTION
 
-	async connect() {
+	connect() {
 		return new Promise((resolve, reject) => {
 
 			// Create websocket
-			this.socket = io.connect(url, { transports: ['websocket'] })
+			this.client = io.connect(this.url, { transports: ['websocket'] })
 
 			// Handle errors
-			this.socket.on("error", this.fail)
-			this.socket.on("server_error", this.fail)
+			this.client.on("error", this.fail)
+			this.client.on("server_error", this.fail)
+
+			// Handle alerts
+			this.client.on("alert", this.addAlert)
 			
 			// Wait for connection to be confirmed or fail
-			this.socket.on("connection", () => !this.name.get() ? this.getNation() : null)
-			this.socket.on("connect_error", this.fail)
+			this.client.on("connection", () => !this.name.get() ? this.getNation() : null)
+			this.client.on("connect_error", this.fail)
 
-			// Report errors
-			this.reporter = this.error.observe(value => value.newValue ?
-				console.error(`ERROR: ${value.newValue}`)
-				: null
+			// Auto-load founder and domain
+			this.loadFounder = this.founderAddress.observe(
+				({ newValue }) => this.get("user", newValue)
+			)
+			this.loadDomain = this.domainAddress.observe(
+				({ newValue }) => this.get("domain", newValue)
 			)
 
 			// Listen for completion
@@ -113,16 +166,18 @@ export default class Nation {
 		})
 	}
 
-	async disconnect() {
-		return new Promise((resolve, reject) => {
 
-			// Stop reporting errors
-			this.reporter()
+	async reset() {
 
-			// Resolve
-			resolve()
+		// Unsubscribe all entities
+		await Promise.all(this.entities.values(e => e.unsync()))
 
-		})
+		// Reset entity object
+		this.entities.clear()
+
+		// Return
+		return this
+
 	}
 
 
@@ -158,10 +213,43 @@ export default class Nation {
 	}
 
 	@action.bound
-	setNation(nation) {
-		this.name.set(nation)
+	setNation({ name, domain, founder, media }) {
+
+		// Set nation name
+		this.name.set(name)
+
+		// Set founder data
+		this.founderAddress.set(founder)
+
+		// Set domain data
+		this.domainAddress.set(domain)
+
+		// Set media url
+		this.mediaURL.set(media)
+
+		// Clear any errors
 		this.error.set(undefined)
+
 	}
+
+
+
+
+
+
+// ALERTS
+
+	@action.bound
+	addAlert(alert) {
+		console.log("adding alert", alert)
+		this.alerts.set(alert.key, alert)
+	}
+
+	seenAlerts(...keys) {
+		return this.task("seen", ...keys)
+	}
+
+
 
 
 
@@ -227,7 +315,7 @@ export default class Nation {
 	completeTask(id) {
 
 		// Close socket
-		this.socket.removeListener(id, this.tasks.get(id).handler)
+		this.client.removeListener(id, this.tasks.get(id).handler)
 
 		// Flag task as complete
 		this.tasks.get(id).set("complete", true)
@@ -249,7 +337,7 @@ export default class Nation {
 
 				// ARTIFICIAL DELAY TO SIMULATE SERVER RESPONSE TIME
 				// IN DEVELOPMENT - REMOVE BEFORE SHIPPING
-				await new Promise(resolve => setTimeout(resolve, 1000))
+				//await new Promise(resolve => setTimeout(resolve, 1000))
 
 				this.updateTask(taskID, update)
 
@@ -284,10 +372,10 @@ export default class Nation {
 			})
 
 			// Prepare for response
-			this.socket.on(taskID, handler)
+			this.client.on(taskID, handler)
 
 			// Send to server
-			this.socket.emit(channel, {
+			this.client.emit(channel, {
 				...payload,
 				task: taskID,
 				nation: this.name.get()
@@ -296,6 +384,55 @@ export default class Nation {
 		})
 	}
 
+
+
+
+// DATABASE
+
+	search(terms, among) {
+		return this.task("search", { terms, among })
+	}
+
+	find(term, among) {
+		return this.task("find", { term, among })
+	}
+
+
+
+
+
+// ENTITIES
+
+	get(type, address) {
+
+		// Check if entity is already subscribed
+		let current = this.entities.get(address)
+
+		// Return cached entity, if it exists
+		if (current) return current
+
+		// Get entity class
+		let Entity = getEntity(type)
+
+		// Build entity
+		let newEntity = new Entity(this).fromAddress(address)
+
+		// Start reading
+		newEntity.sync()
+
+		// Save entity
+		this.cacheEntity(newEntity)
+
+		// Return entity
+		return newEntity
+
+	}
+
+
+	@action.bound
+	cacheEntity(entity) {
+		this.entities.set(entity.address, entity)
+	}
 
 
 }

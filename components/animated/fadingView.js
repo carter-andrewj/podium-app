@@ -1,16 +1,16 @@
 import React from 'react';
 import Component from '../component';
 import { View, Animated, Easing } from 'react-native';
+import { inject, observer } from 'mobx-react';
 import { FontAwesomeIcon } from 'expo-fontawesome';
 
 import { Map, List } from 'immutable';
 
-import styles from '../../styles/styles';
-import settings from '../../settings';
 
 
 
-
+@inject("store")
+@observer
 class FadingView extends Component {
 
 	constructor() {
@@ -90,14 +90,11 @@ class FadingView extends Component {
 		// Get size of content
 		this.contentHeight = nativeEvent.layout.height
 
-		// Get timings
-		let duration = settings.layout.moveTime
-
 		// Animate resize
 		Animated
 			.timing(this.height, {
 				toValue: this.contentHeight,
-				duration: duration,
+				duration: this.timing.move,
 				easing: Easing.linear
 			})
 			.start()
@@ -134,9 +131,9 @@ class FadingView extends Component {
 			let pause = this.props.pauseIn || this.props.pause || 0
 
 			let speed = this.props.speedIn || this.props.speed || 1.0
-			let moveTime = settings.layout.moveTime * speed
+			let moveTime = this.timing.move * speed
 
-			let fadeTime = settings.layout.fadeTime
+			let fadeTime = this.timing.fade
 
 			// Animate
 			Animated
@@ -193,9 +190,9 @@ class FadingView extends Component {
 			let delay = this.props.delayOut || this.props.delay || 0
 
 			let speed = this.props.speedOut || this.props.speed || 1.0
-			let moveTime = settings.layout.moveTime * speed
+			let moveTime = this.timing.move * speed
 
-			let fadeTime = settings.layout.fadeTime
+			let fadeTime = this.timing.fade
 
 			// Animate height
 			Animated
@@ -228,18 +225,39 @@ class FadingView extends Component {
 
 		let marginTop = 0
 		let marginBottom = 0
+		let paddingTop = 0
+		let paddingBottom = 0
+		let borderWidth = 0
 		if (this.props.style) {
-			marginTop = this.props.style.marginTop || this.props.style.margin || 0
-			marginBottom = this.props.style.marginBottom || this.props.style.margin || 0
+			marginTop = (this.props.style.marginTop || this.props.style.marginTop === 0) ?
+				this.props.style.marginTop
+				: this.props.style.margin || 0
+			marginBottom = (this.props.style.marginBottom || this.props.style.marginBottom === 0) ?
+				this.props.style.marginBottom
+				: this.props.style.margin || 0
+			paddingTop = (this.props.style.paddingTop || this.props.style.paddingTop === 0) ?
+				this.props.style.paddingTop
+				: this.props.style.padding || 0
+			paddingBottom = (this.props.style.paddingBottom || this.props.style.paddingBottom === 0) ?
+				this.props.style.paddingBottom
+				: this.props.style.padding || 0
+			borderWidth = this.props.style.borderWidth || 0
 		}
 
 		return <Animated.View
-			pointerEvents={this.isVisible ? "box-none" : "none"}
+			pointerEvents={
+				this.props.tappable ? undefined :
+				this.isVisible ? "box-none" :
+				"none"
+			}
 			style={{
-				...styles.container,
+				...this.style.container,
 				...this.props.style,
 				marginTop: Animated.multiply(marginTop, this.open),
 				marginBottom: Animated.multiply(marginBottom, this.open),
+				paddingTop: Animated.multiply(paddingTop, this.open),
+				paddingBottom: Animated.multiply(paddingBottom, this.open),
+				borderWidth: Animated.multiply(borderWidth, this.open),
 				minHeight: Animated.multiply(this.height, this.open),
 				maxHeight: Animated.multiply(this.height, this.open),
 				opacity: this.opacity
@@ -248,14 +266,14 @@ class FadingView extends Component {
 			<View
 				pointerEvents="none"
 				style={{
-					...styles.container,
+					...this.style.container,
 					position: "absolute",
 					opacity: 0.0
 				}}>
 				<View
 					onLayout={this.resize}
 					style={{
-						...styles.container,
+						...this.style.container,
 						...this.props.style,
 						backgroundColor: null,
 						width: "auto"

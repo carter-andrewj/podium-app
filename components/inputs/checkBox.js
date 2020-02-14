@@ -1,21 +1,20 @@
 import React from 'react';
 import Component from '../component';
-import { Text, View, TouchableWithoutFeedback } from 'react-native';
+import { Text, View } from 'react-native';
+import { inject, observer } from 'mobx-react';
 import { FontAwesomeIcon } from 'expo-fontawesome';
 
-import styles from '../../styles/styles';
-import settings from '../../settings';
+import TouchableWithoutFeedback from './touchableWithoutFeedback';
 
 
 
 
+@inject("store")
+@observer
 export default class CheckBox extends Component {
 
 	constructor() {
-		super()
-		this.state = {
-			on: false
-		}
+		super({ on: false })
 		this.set = this.set.bind(this)
 		this.toggle = this.toggle.bind(this)
 	}
@@ -38,22 +37,28 @@ export default class CheckBox extends Component {
 		this.updateState(
 			state => state.update("on", x => !x),
 			this.props.onChange ?
-				() => this.props.onChange(this.state.on)
+				() => this.props.onChange(this.getState("on"))
 				: null
 		)
 	}
 
 	render() {
 		return <TouchableWithoutFeedback onPress={this.toggle}>
-			<View style={[styles.input.checkbox, this.props.style]}>
+			<View style={{
+					...this.style.checkbox.container,
+					...this.props.style
+				}}>
 				<FontAwesomeIcon
 					icon="check"
-					size={settings.iconSize.small}
-					color={this.state.on ?
-						this.props.color || settings.colors.black
+					size={this.layout.checkbox.icon}
+					color={this.getState("on") ?
+						this.props.color || this.colors.black
 						: "transparent"
 					}
-					style={[styles.input.check, this.props.iconStyle]}
+					style={{
+						...this.style.checkbox.check,
+						...this.props.iconStyle
+					}}
 				/>
 			</View>
 		</TouchableWithoutFeedback>

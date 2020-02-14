@@ -6,9 +6,12 @@ import * as Font from 'expo-font';
 import { Asset } from 'expo-asset';
 
 import config from './config';
+import './icons';
 
 import Nation from './nation';
 import Session from './session';
+import Style from './style';
+import Navigation from './navigation';
 
 
 
@@ -24,6 +27,8 @@ export default class Store {
 	constructor() {
 
 		// Observables
+
+		// Loading state
 		this.load = observable.map(
 			{
 				fonts: false,
@@ -34,6 +39,7 @@ export default class Store {
 			{ name: "loader"}
 		)
 
+		// Device permissions
 		this.permissions = observable.map(
 			{
 				camera: false
@@ -41,12 +47,28 @@ export default class Store {
 			{ name: "permissions" }
 		)
 
+		// Full-screen mask state
+		this.mask = observable.map(
+			{
+				content: undefined,
+				onOpen: undefined,
+				onClose: undefined
+			},
+			{
+				name: "mask",
+				deep: false
+			}
+		)
+
 		// State
 		this.account = undefined
+		this.config = config
 		this.nation = new Nation(this)
 		this.session = new Session(this)
-		this.config = config
+		this.style = new Style(this)
+		this.navigation = new Navigation(this)
 
+		
 		// Methods
 		this.loadNation = this.loadNation.bind(this)
 
@@ -58,8 +80,72 @@ export default class Store {
 
 		this.permitCamera = this.permitCamera.bind(this)
 
+
+		// Keep current time up-to-date so ages, etc... auto-update
+		this.now = observable.box(new Date().getTime())
+		this.next = setInterval(this.nextMinute, 1000)
+
 	}
 
+
+// TIME
+
+	@action.bound
+	nextMinute() {
+		let now = new Date().getTime()
+		this.now.set(now)
+	}
+
+	get durations() {
+		return [
+			{
+				limit: 365 * 24 * 60 * 60,
+				form: v => `${v}y`,
+			},
+			{
+				limit: 7 * 24 * 60 * 60,
+				form: v => `${v}w`,
+			},
+			{
+				limit: 24 * 60 * 60,
+				form: v => `${v}d`
+			},
+			{
+				limit: 60 * 60,
+				form: v => `${v}h`
+			},
+			{
+				limit: 60,
+				form: v => `${v}m`
+			},
+			{
+				limit: 0.1,
+				form: _ => `now`
+			}
+		]
+	}
+
+
+	formatAge(timestamp) {
+
+		// Calculate age of provided date
+		let age = Math.ceil((this.now - timestamp) / 1000.0)
+
+		// Loop through durations to find correct format
+		let result
+		for (let i = 0; i < this.durations.length; i++) {
+			let { limit, form } = this.durations[i]
+			let v = age / limit
+			if (v > 1) {
+				result = form(Math.floor(v))
+				break
+			}
+		}
+
+		// Return result
+		return result
+
+	}
 
 
 
@@ -71,8 +157,27 @@ export default class Store {
 			&& this.load.get("media")
 			&& this.load.get("nation")
 			&& this.load.get("account")
+			&& this.load.get("feed")
 	}
 
+
+
+
+// DISPLAY
+
+	@action.bound
+	setMask(content, onOpen, onClose) {
+		this.mask.set("onOpen", onOpen)
+		this.mask.set("onClose", onClose)
+		this.mask.set("content", content)
+	}
+
+	@action.bound
+	clearMask() {
+		this.mask.set("onOpen", undefined)
+		this.mask.set("onClose", undefined)
+		this.mask.set("content", undefined)
+	}
 
 
 
@@ -166,7 +271,7 @@ export default class Store {
 		let active = await SecureStore.getItemAsync("active")
 
 		// Ignore if no account was active
-		if (!active) return false
+		if (!active || active === "none") return false
 
 		// Load last active account
 		return await SecureStore
@@ -196,6 +301,11 @@ export default class Store {
 
 	async setAccount(address) {
 		return await SecureStore.setItemAsync("active", address)
+	}
+
+
+	async clearAccount() {
+		return this.setAccount("none")
 	}
 
 

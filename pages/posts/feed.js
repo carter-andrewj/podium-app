@@ -4,16 +4,15 @@ import { Dimensions, FlatList, Text, View,
 		 TouchableOpacity } from 'react-native';
 import { FontAwesomeIcon } from 'expo-fontawesome';
 
-import { toJS } from 'mobx';
+import { toJS, computed } from 'mobx';
 import { inject, observer } from 'mobx-react';
-
-import globals from '../../globals';
-import settings from '../../settings';
-import styles from '../../styles/styles';
 
 import Post from './post';
 
+import Button from '../../components/buttons/button';
 import Spinner from '../../components/animated/spinner';
+
+import Animator from '../../utils/animator';
 
 
 
@@ -23,15 +22,21 @@ class Feed extends Page {
 
 	constructor() {
 
-		super()
+		super({
+			scroll: true,
+			issue: -1,
+		})
 
-		this.state = {
-			threads: [],
-			loading: false
-		}
+		// Refs
+		this.feedlist = React.createRef()
 
-		this.feed = React.createRef()
+		// Utilities
+		this.animator = new Animator()
 
+		// Methods
+		this.publish = this.publish.bind(this)
+
+		this.keys = this.keys.bind(this)
 		this.thread = this.thread.bind(this)
 		this.header = this.header.bind(this)
 		this.footer = this.footer.bind(this)
@@ -39,24 +44,73 @@ class Feed extends Page {
 		this.spacer = this.spacer.bind(this)
 
 		this.scrollTo = this.scrollTo.bind(this)
-		this.lockScroll = this.lockScroll.bind(this)
-		this.unlockScroll = this.unlockScroll.bind(this)
 
 	}
 
 
-	pageWillFocus() {
-		this.props.screenProps.setBanner(
-			"alerts",
-			"feed",
-			"post",
-			"search"
-		)
+
+// LIFECYCLE
+
+	componentDidUpdate() {
+		this.animator.play()
 	}
+
+
+
+// PUBLISH
+
+	get feed() {
+		return this.session.feed
+	}
+
+	@computed
+	get isPublishing() {
+		return this.feed.publishing
+	}
+
+	async publish() {
+
+		// Add posts
+		await this.feed.publish()
+
+		// Show posts
+		this.updateState(state => state.set("issue", this.feed.size))
+
+	}
+
+
+
+
+
+
+// SCROLL
+
+	get scroll() {
+		return {
+			lock: () => this.updateState(state => state.set("scroll", false)),
+			unlock: () => this.updateState(state => state.set("scroll", true)),
+		}
+	}
+
 
 
 
 // COMPONENTS
+
+	keys({ type, issue, address }, index) {
+		switch (type) {
+
+			// Label notices
+			case "notice": return `feed-notice-${index}`
+
+			// Label threads
+			case "thread": return `thread-${address}-issue-${issue}`
+
+			// Otherwise, return nothing
+			default: return `feed-${index}`
+
+		}
+	}
 
 	thread({ item, index }) {
 
@@ -65,29 +119,32 @@ class Feed extends Page {
 
 			// Make notice elements
 			case "notice":
-				return <View style={styles.feed.notice}>
-					<View style={styles.feed.noticeBackground}>
+				return <View
+					style={this.style.feed.notice}>
+					<View style={this.style.feed.noticeBackground}>
 						<FontAwesomeIcon
 							icon="chevron-up"
-							size={90}
-							color={settings.colors.white}
+							size={this.layout.feed.notice.icon}
+							color={this.colors.white}
 						/>
 					</View>
-					<Text style={styles.feed.noticeText}>
+					<Text style={this.style.feed.noticeText}>
 						{`published ${item.value} new posts`}
 					</Text>
 				</View>
 
 			// Make threads
 			case "thread":
-				const { key, address, origin, appearances } = item
-				const stale = this.props.store.posts
-					.isStale(origin, appearances)
+				const { address, issue } = item
+				const stale = this.feed.isStale(address, issue)
 				return <Post
-					key={key}
 					address={address}
-					stale={stale}
 					index={index}
+					currentIssue={this.getState("issue")}
+					issue={issue}
+					stale={stale}
+					animator={this.animator}
+					feedScroll={this.scroll}
 				/>
 
 			// Otherwise, return nothing
@@ -98,46 +155,40 @@ class Feed extends Page {
 
 
 	header() {
-		const pending = this.session.feed.pending
-		return pending > 0 ?
-			<View
+		const pending = this.feed.pending
+		const plural = (pending === 1) ? "" : "s"
+		return (pending > 0) ?
+			<TouchableOpacity
 				key="feed-header"
-				style={styles.feed.button}>
-				<TouchableOpacity
-					onPress={this.session.publish}
-					style={styles.container}>
-					<Text style={styles.feed.buttonText}>
-						{`show ${pending} new posts`}
-					</Text>
-				</TouchableOpacity>
-			</View>
-			:
-			<View
-				key="feed-header"
-				style={styles.feed.notice}>
-				<Text style={styles.feed.noticeText}>
-					no new posts
+				onPress={this.publish}
+				style={this.style.feed.button}>
+				<Text style={this.style.feed.buttonText}>
+					{`${pending} new post${plural}`}
 				</Text>
-			</View>
+			</TouchableOpacity>
+			:
+			<Text style={this.style.feed.noticeText}>
+				no new posts
+			</Text>
 	}
 
 
 	footer() {
-		return <View
-			key="feed-footer"
-			style={styles.feed.notice}>
-			<Spinner size={40} />
-		</View>
+		return this.feed.backfilling ?
+			<Spinner size={this.layout.feed.notice.spinner} /> :
+			<Text style={this.style.feed.noticeText}>
+				no more posts
+			</Text>
 	}
 
 	empty() {
-		return <View style={styles.feed.spacer} />
+		return <View style={this.style.feed.spacer} />
 	}
 
 	spacer({ leadingItem }) {
 		return <View
 			key={`${leadingItem.key}-spacer`}
-			style={styles.feed.separator}
+			style={this.style.feed.separator}
 		/>
 	}
 
@@ -148,22 +199,10 @@ class Feed extends Page {
 // SCROLL
 
 	scrollTo(index) {
-		this.feed.current.scrollToIndex({
+		this.feedlist.current.scrollToIndex({
 			index: index,
 			viewPosition: 0.5
 		})
-	}
-
-	lockScroll(event) {
-		if (!globals.screenLock) {
-			globals.screenLock = "feed"
-		}
-	}
-
-	unlockScroll() {
-		if (globals.screenLock === "feed") {
-			globals.screenLock = false
-		}
 	}
 
 
@@ -173,34 +212,50 @@ class Feed extends Page {
 
 	render() {
 
-		return <View style={styles.feed.container}>
+		return <View style={this.style.core.inner}>
+
+			<View style={this.style.core.header}>
+
+				<Button
+					containerStyle={this.style.core.headerButton}
+					onPress={() => console.log("filter")}
+					icon="filter"
+					iconSize={this.layout.core.header.icon}
+				/>
+
+				<Button
+					containerStyle={this.style.core.headerButton}
+					onPress={() => console.log("to top")}
+					icon="angle-up"
+					iconSize={this.layout.core.header.icon}
+				/>
+
+			</View>
+
 			<FlatList
 
-				ref={this.feed}
+				ref={this.feedlist}
+				keyExtractor={this.keys}
 
-				contentContainerStyle={styles.feed.list}
-				endFillColor={settings.colors.neutral}
+				endFillColor={this.colors.neutral}
 
 				ListHeaderComponent={this.header}
+				ListHeaderComponentStyle={this.style.feed.notice}
+
 				ListEmptyComponent={this.empty}
+
 				ListFooterComponent={this.footer}
+				ListFooterComponentStyle={this.style.feed.notice}
+
 				ItemSeparatorComponent={this.spacer}
 
-				data={this.session.feed.all}
-				extraData={this.session.feed.pending}
-				initialNumToRender={5}
+				data={this.feed.all}
+				extraData={this.feed.pending}
 
 				renderItem={this.thread}
-				refreshing={this.state.loading}
 
-				scrollEnabled={!globals.screenLock ||
-					globals.screenLock === "feed"}
-				onScrollBeginDrag={this.lockScroll}
-				onScrollEndDrag={this.unlockScroll}
+				scrollEnabled={this.getState("scroll")}
 				scrollsToTop={false}
-
-				onEndReached={this.loadThreads}
-				onEndReachedThreshold={1.0}
 
 				maintainVisibleContentPosition={{
 					minIndexForVisible: 0,
@@ -211,6 +266,7 @@ class Feed extends Page {
 				keyboardDismissMode="on-drag"
 
 			/>
+
 		</View>
 	}
 

@@ -9,9 +9,6 @@ import Animator from '../../utils/animator';
 
 import Task from './task';
 
-import styles from '../../styles/styles';
-import settings from '../../settings';
-
 
 
 @inject("store")
@@ -26,7 +23,7 @@ class TaskBar extends Component {
 
 
 	get capacity() {
-		return settings.layout.maxTasks
+		return this.settings.tasks.max
 	}
 
 
@@ -59,7 +56,7 @@ class TaskBar extends Component {
 		// Render
 		return <View
 			pointerEvents="box-none"
-			style={styles.tasks.container}>
+			style={this.style.taskBar.container}>
 
 			{content.toJS()}
 

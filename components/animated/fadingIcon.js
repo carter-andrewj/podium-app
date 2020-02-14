@@ -1,14 +1,13 @@
 import React from 'react';
 import Component from '../component';
 import { Animated, Easing } from 'react-native';
+import { inject, observer } from 'mobx-react';
 import { FontAwesomeIcon } from 'expo-fontawesome';
 
-import styles from '../../styles/styles';
-import settings from '../../settings';
 
 
-
-
+@inject("store")
+@observer
 export default class FadingIcon extends Component {
 
 	constructor() {
@@ -66,7 +65,7 @@ export default class FadingIcon extends Component {
 
 			// Calculate timings
 			let delay = this.props.delayIn || this.props.delay || 0
-			let duration = this.props.timeIn || this.props.time || settings.layout.fadeTime
+			let duration = this.props.timeIn || this.props.time || this.timing.fade
 
 			// Fade in
 			Animated
@@ -106,7 +105,7 @@ export default class FadingIcon extends Component {
 
 			// Calculate timings
 			let delay = this.props.delayOut || this.props.delay || 0
-			let duration = this.props.timeOut || this.props.time || settings.layout.fadeTime
+			let duration = this.props.timeOut || this.props.time || this.timing.fade
 
 			// Fade in
 			Animated
@@ -131,13 +130,13 @@ export default class FadingIcon extends Component {
 	render() {
 
 		return <Animated.View style={[
-				this.props.containerStyle || styles.container,
+				this.props.containerStyle || this.style.container,
 				{ opacity: this.fader }
 			]}>
 			<FontAwesomeIcon
 				icon={this.props.icon}
 				size={this.props.size || 20}
-				color={this.props.color || settings.colors.white}
+				color={this.props.color || this.colors.neutral}
 				style={this.props.style}
 			/>
 		</Animated.View>

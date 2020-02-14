@@ -18,7 +18,7 @@ class InputAlias extends LobbyInput {
 		this.name = "alias"
 		this.placeholder = "@alias"
 		this.caption = {
-			empty: "create an alias",
+			empty: "create a unique alias",
 			validating: "checking availability",
 			valid: "alias available"
 		}
@@ -71,7 +71,7 @@ class InputAlias extends LobbyInput {
 		if (this.props.mode === "signin") return true
 
 		// Ensure alias is not already owned
-		let current = await this.session
+		let current = await this.nation
 			.find(alias.substring(1))
 			.catch(this.setInvalid)
 

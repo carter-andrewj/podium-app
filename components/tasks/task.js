@@ -11,8 +11,6 @@ import FadingView from '../animated/fadingView';
 import FadingIcon from '../animated/fadingIcon';
 import Spinner from '../animated/spinner';
 
-import styles from '../../styles/styles';
-import settings from '../../settings';
 
 
 
@@ -22,14 +20,12 @@ class Task extends Component {
 
 	constructor() {
 
-		super()
-
-		// State
-		this.state = {
+		// Initialize
+		super({
 			success: false,
 			fail: false,
 			show: true
-		}
+		})
 
 		// Flags
 		this.reserved = false
@@ -99,10 +95,9 @@ class Task extends Component {
 
 		// Clear listeners
 		if (this.animator) this.animator()
-		if (this.observer) this.observer()
 
-		// Auto-remove task
-		if (this.reserved) this.nation.releaseTask(this.props.task)
+		// Release task, if required
+		this.release()
 
 		// Clear timers
 		clearTimeout(this.disposer)
@@ -160,8 +155,8 @@ class Task extends Component {
 							this.props.animator.play
 						),
 						Math.max(
-							settings.layout.taskExit,
-							settings.layout.taskLifetime - lifetime
+							this.settings.tasks.exitTime,
+							this.settings.tasks.lifetime - lifetime
 						)
 					)
 
@@ -178,7 +173,7 @@ class Task extends Component {
 		Animated
 			.timing(this.color, {
 				toValue: value,
-				duration: settings.layout.fadeTime
+				duration: this.settings.timing.fade
 			})
 			.start()
 	}
@@ -248,24 +243,24 @@ class Task extends Component {
 		let color = this.color.interpolate({
 			inputRange: [0.0, 0.5, 1.0],
 			outputRange: [
-				settings.colors.bad,
-				settings.colors.neutralDark,
-				settings.colors.good
+				this.colors.bad,
+				this.colors.neutralDark,
+				this.colors.major
 			],
 		})
 
 		return <FadingView
 			animator={this.props.animator}
-			show={this.props.show && this.state.show}
+			show={this.props.show && this.getState("show")}
 			beforeShow={this.reserve}
 			onHide={this.release}
 			style={{
-				...styles.tasks.box,
+				...this.style.task.container,
 				backgroundColor: color
 			}}>
 
-			<View style={styles.tasks.message}>
-				<Text style={styles.tasks.text}>
+			<View style={this.style.task.message}>
+				<Text style={this.style.task.text}>
 					{this.task.get("status") ?
 						`${this.task.get("label")}: ${this.task.get("status")}`
 						:
@@ -274,33 +269,33 @@ class Task extends Component {
 				</Text>
 			</View>
 
-			<View style={styles.tasks.iconHolder}>
+			<View style={this.style.task.iconHolder}>
 
 				<FadingIcon
 					animator={this.props.animator}
-					show={this.state.success}
+					show={this.getState("success")}
 					icon="check"
-					size={settings.fontsize.small}
-					color={settings.colors.white}
-					containerStyle={styles.tasks.icon}
+					size={this.style.font.size.small}
+					color={this.colors.white}
+					containerStyle={this.style.task.icon}
 				/>
 
 				<FadingIcon
 					animator={this.props.animator}
-					show={this.state.fail}
+					show={this.getState("fail")}
 					icon="ban"
-					size={settings.fontsize.small}
-					color={settings.colors.white}
-					containerStyle={styles.tasks.icon}
+					size={this.style.font.size.small}
+					color={this.colors.white}
+					containerStyle={this.style.task.icon}
 				/>
 
 				<FadingView
 					animator={this.props.animator}
-					style={styles.tasks.icon}
-					show={!this.state.success && !this.state.fail}>
+					style={this.style.task.icon}
+					show={!this.getState("success") && !this.getState("fail")}>
 					<Spinner
-						size={settings.fontsize.small}
-						color={settings.colors.white}
+						size={this.style.font.size.small}
+						color={this.colors.white}
 					/>
 				</FadingView>
 

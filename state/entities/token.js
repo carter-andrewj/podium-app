@@ -2,6 +2,8 @@ import { observable, computed } from 'mobx';
 
 import Entity from './entity';
 
+import { placeholder } from './utils';
+
 
 
 class Token extends Entity {
@@ -14,7 +16,6 @@ class Token extends Entity {
 
 		// State
 		this.type = "Token"
-		this.state = observable.Map()
 
 	}
 
@@ -22,7 +23,23 @@ class Token extends Entity {
 
 // GETTERS
 
+	@computed
+	@placeholder("...")
+	get name() {
+		return this.state.get("designation").name
+	}
 
+	@computed
+	@placeholder("")
+	get symbol() {
+		return this.state.get("designation").symbol
+	}
+
+	@computed
+	@placeholder(new Map())
+	get pricing() {
+		return this.state.get("pricing")
+	}
 
 
 }

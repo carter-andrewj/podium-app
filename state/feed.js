@@ -10,13 +10,18 @@ export default class Feed {
 
 		// Refs
 		this.session = session
+		this.nation = session.nation
 
 		// State
-		this.queued = Map()
+		this.sources = Map()
+		this.queued = observable.map({}, { deep: false })
+		this.nextPublished = Map()
+		this.nextAuthors = Map()
 		this.published = Map()
-		this.threads = observable.map()
+		this.threads = observable.array([], { deep: false })
 
 		// Flags
+		this.live = false
 		this.publishing = observable.box(false)
 
 		// Methods
@@ -24,7 +29,12 @@ export default class Feed {
 		this.hasPublished = this.hasPublished.bind(this)
 		this.hasPending = this.hasPending.bind(this)
 
-		this.stale = this.stale.bind(this)
+		this.isStale = this.isStale.bind(this)
+
+		this.connect = this.connect.bind(this)
+		this.subscribe = this.subscribe.bind(this)
+		this.unsubscribe = this.unsubscribe.bind(this)
+		this.disconnect = this.disconnect.bind(this)
 
 		this.queue = this.queue.bind(this)
 		this.publish = this.publish.bind(this)
@@ -32,12 +42,8 @@ export default class Feed {
 	}
 
 
-// GETTERS
 
-	@computed
-	get size() {
-		return this.published.size
-	}
+// GETTERS
 
 	@computed
 	get pending() {
@@ -45,11 +51,15 @@ export default class Feed {
 	}
 
 	@computed
-	get all() {
-		let out = []
-		this.threads.forEach((_, v) => out.concat(v))
-		return out
+	get size() {
+		return this.published.size
 	}
+
+	@computed
+	get all() {
+		return this.threads.toJS()
+	}
+
 
 
 
@@ -60,16 +70,108 @@ export default class Feed {
 	}
 
 	hasPending(address) {
-		return this.queued.map(q => q.post.address).toSet().has(address)
+		return [...this.queued.values()].includes(address)
 	}
 
 	has(address) {
 		return this.hasPublished(address) || this.hasPending(address)
 	}
 
-	stale(address, issue) {
+	isStale(address, issue) {
 		return this.published.get("address") > issue
 	}
+
+
+
+
+// SUBSCRIPTIONS
+
+	async connect() {
+
+		// Ignore if already connected
+		if (this.live) return
+
+		// Set live flag
+		this.live = true
+
+		// Subscribe to active user and current followed users
+		await Promise.all([
+			this.subscribe(this.session.user.address),
+			...this.session.user.following.map(this.subscribe)
+		])
+
+		// Publish posts
+		await this.publish()
+
+		// React to changes in followed users
+		this.following = this.session.user.following.observe(({ added, removed }) => {
+
+			// Handle unfollows
+			removed.map(this.unsubscribe)
+			
+			// Handle follows
+			added.map(this.subscribe)
+
+		})
+
+	}
+
+
+	async subscribe(address) {
+
+		// Get user
+		let user = this.nation.get("user", address)
+
+		// Wait for user to load
+		await user.whenReady()
+
+		// Get this user's latest post
+		await Promise.all(user.posts.last(10).map(this.queue))
+
+		// Listen to this user's posts
+		let posts = user.posts.observe(({ added }) => added.map(this.queue))
+
+		// Log subscription
+		this.sources = this.sources.set(address, { remove: posts })
+
+		return
+
+	}
+
+
+	unsubscribe(address) {
+
+		// Stop listener
+		this.sources.get(address).remove()
+
+		// TODO - Remove any pending posts from this user
+
+		// Remove subscription
+		this.sources = this.sources.delete(address)
+
+	}
+
+
+	disconnect() {
+
+		// Ignore if not connected
+		if (!this.live) return
+
+		// Clear connected flag
+		this.live = false
+
+		// Remove followed user listener
+		this.following()
+		this.following = undefined
+
+		// Stop all subscriptions
+		this.sources.map(s => s.remove())
+
+		// Delete subscriptions
+		this.sources = Map()
+
+	}
+
 
 
 
@@ -81,48 +183,121 @@ export default class Feed {
 		if (!this.has(address)) {
 
 			// Load post
-			let post = await this.session.subscribe("post", address)
+			let post = this.nation.get("post", address)
 
-			// Add to pending posts
-			// (Note: the feed intentionally replaces old posts with
-			// newer ones in the same thread)
-			this.queued = this.queued.set(post.origin, Map({
-				post: post,
-				issue: this.size
-			}))
+			// Wait for post data
+			await post.whenReady()
 
+			// Ignore broken/empty posts
+			if (!post.text) return
+
+			// If a post from this thread is already queued, remove it
+			let fromThread = this.queued.get(post.originAddress)
+			if (fromThread) {
+				this.nextPublished = this.nextPublished.delete(fromThread.address)
+			}
+
+			// If an origin post from this author is already queued, remove it
+			let replace
+			let fromAuthor = this.nextAuthors.get(post.authorAddress)
+			if (fromAuthor) {
+				replace = fromAuthor
+				this.nextPublished = this.nextPublished.delete(fromAuthor)
+			}
+
+			// Update queue metadata
+			this.nextPublished = this.nextPublished.set(address, this.size)
+			this.nextAuthors = this.nextAuthors.set(post.authorAddress, address)
+
+			// Add to publishing set
+			this.enqueue(post, replace)
+			
 		}
 
+		return
+
 	}
 
 
-	@action
 	publish() {
 
-		// Set flag
-		this.publishing.set(true)
+		// Ignore if already publishing
+		if (this.publishing.get()) return
 
-		// Decant queue
-		let queued = this.queued
-		this.queued = Set()
+		// Decant queue and set flag
+		let queued = this.setPublishing()
 
 		// Record/update published posts
-		const posts = queued.reduce(
-			(p, q) => {
-				const post = q.get("post")
-				return p.set(post.address, post.issue)
-			},
-			Map()
-		)
-		this.published = this.published.mergeDeep(posts)
+		this.published = this.published.merge(this.nextPublish)
+		this.nextPublish = Map()
+		this.nextAuthors = Map()
+
+		// Sort queue
+		let issue = [ ...queued.values() ]
+		issue.sort((a, b) => a.timestamp < b.timestamp)
 
 		// Publish posts
-		this.threads.set(this.size, queued.toJS())
-
-		// Add empty queue and clear flag
-		this.publishing.set(false)
+		this.addThreads([
+			...issue,
+			this.size > 0 ?
+				{ type: "notice", value: queued.size }
+				: null,
+		])
 
 	}
 
+
+
+
+// ACTIONS
+
+	@action.bound
+	enqueue(post, replace) {
+
+		// Remove replaced post, if required
+		if (replace) this.queued.delete(replace)
+
+		// Add to pending posts
+		// (Note: the feed intentionally replaces old posts with
+		// newer ones in the same thread)
+		this.queued.set(post.originAddress, {
+			author: post.authorAddress,
+			address: post.address,
+			timestamp: post.updated.get(),
+			issue: this.size,
+			type: "thread",
+		})
+
+	}
+
+
+	@action.bound
+	setPublishing() {
+		let queued = this.queued.toJS()
+		this.publishing.set(true)
+		this.queued.clear()
+		return queued
+	}
+
+
+	@action.bound
+	addThreads(threads) {
+		let newFeed = threads.filter(x => x).concat(this.threads)
+		this.threads.replace(newFeed)
+		this.publishing.set(false)
+	}
+
+
+	@action.bound
+	clear() {
+
+		// Clear variables
+		this.queued.clear()
+		this.published = Map()
+
+		// Empty feed
+		this.threads.clear()
+
+	}
 
 }

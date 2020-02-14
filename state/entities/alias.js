@@ -2,6 +2,9 @@ import { observable, computed } from 'mobx';
 
 import Entity from './entity';
 
+import { placeholder } from './utils';
+
+
 
 
 class Alias extends Entity {
@@ -14,27 +17,27 @@ class Alias extends Entity {
 
 		// State
 		this.type = "Alias"
-		this.state = observable.map()
-
 	}
 
 
 
 // GETTERS
-
+	
 	@computed
-	get label() {
-		return this.id ? `@${this.id}` : super.label
+	get alias() {
+		return `@${this.id}`
 	}
 
 	@computed
+	@placeholder("...")
 	get id() {
 		return this.state.get("id")
 	}
-
+	
 	@computed
+	@placeholder()
 	get owner() {
-		return this.state.get("owner")
+		return this.state.get("owner", false)
 	}
 
 

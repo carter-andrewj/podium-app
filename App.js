@@ -1,30 +1,29 @@
-import React from 'react';
+import React, { Component } from 'react';
 import { View } from 'react-native';
-
-import { configure } from "mobx"
-import { Provider } from 'mobx-react';
 import { registerRootComponent } from 'expo';
 
+import { Provider } from 'mobx-react';
 import Store from './state/store';
 
-import Navigator from './pages/navigator';
-
-import styles from './styles/styles';
+import Root from './pages/root';
 
 
+class App extends Component {
 
-// Create MobX Store
-let store = new Store();
+	constructor() {
+		super()
+		this.store = new Store()
+	}
 
-
-class App extends React.Component {
 	render() {
-		return <Provider store={store}>
-			<Navigator />
+		return <Provider store={this.store}>
+			<Root />
 		</Provider>
 	}
+
 }
 
-registerRootComponent(App);
+
+registerRootComponent(App)
 
 export default App;

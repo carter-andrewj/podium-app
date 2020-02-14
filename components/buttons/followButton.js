@@ -1,12 +1,10 @@
 import React from 'react';
 import Component from '../component';
+import { computed } from 'mobx';
 import { inject, observer } from 'mobx-react';
 import { StyleSheet, Dimensions, Text, View, Animated,
 		 Easing, TouchableOpacity } from 'react-native';
 import { FontAwesomeIcon } from 'expo-fontawesome';
-
-import styles from '../../styles/styles';
-import settings from '../../settings';
 
 import SquareButton from './squareButton';
 
@@ -18,88 +16,78 @@ export default class FollowButton extends Component {
 
 	constructor() {
 
-		super()
+		super({ loading: false })
 
-		this.state = {
-			loading: true,
-			following: null
-		}
-
-		this.checkFollow = this.checkFollow.bind(this)
+		// Methods
+		this.load = this.load.bind(this)
 		this.follow = this.follow.bind(this)
 		this.unfollow = this.unfollow.bind(this)
 
 	}
 
 
-	componentWillMount() {
-		this.checkFollow()
+
+
+// GETTERS
+
+	@computed
+	get isLoading() {
+		return this.isFollowing === undefined || this.getState("loading")
+	}
+
+	@computed
+	get isFollowing() {
+		return this.activeUser.isFollowing(this.props.user)
 	}
 
 
-	checkFollow() {
-		this.props.store.session.user
-			.isFollowing(this.props.address)
-			.then(result => this.updateState(state => state
-				.set("loading", false)
-				.set("following", result)
-			))
-			.catch(console.error)
-	}
 
 
-	follow() {
+// ACTIONS
+
+	load(callback) {
 		this.updateState(
+
+			// Set loading flag
 			state => state.set("loading", true),
-			() => this.props.store.session
-				.follow(this.props.address)
-				.then(() => this.updateState(state => state
-					.set("loading", false)
-					.set("following", true)
+
+			// Run callback
+			() => callback()
+				.then(() => this.updateState(
+					state => state.set("loading", false)
 				))
 				.catch(console.error)
 		)
+	}
+
+	follow() {
+		this.load(() => this.activeUser.follow(this.props.user))
 	}
 
 
 	unfollow() {
-		this.updateState(
-			state => state.set("loading", true),
-			() => this.props.store.session
-				.unfollow(this.props.address)
-				.then(() => this.updateState(state => state
-					.set("loading", false)
-					.set("following", true)
-				))
-				.catch(console.error)
-		)
+		this.load(() => this.activeUser.unfollow(this.props.user))
 	}
 
 
 
 
+// RENDER
 
 	render() {
-		return <SquareButton
-			
-			loading={this.state.loading}
-			onPress={this.state.following ?
-				this.unfollow :
-				this.follow
-			}
-
-			icon="eye"
-			color={this.state.following ?
-				settings.colors.white :
-				settings.colors.major
-			}
-			background={this.state.following ?
-				settings.colors.major :
-				settings.colors.white
-			}
-			border={settings.colors.major}
-
-		/>
+		return this.props.user.address === this.activeUser.address ?
+			<SquareButton label="YOU" />
+			:
+			<SquareButton
+				loading={this.isLoading}
+				onPress={this.isFollowing ? this.unfollow : this.follow}
+				icon="eye"
+				color={(this.isFollowing && this.isLoading) ? this.colors.major
+					: this.isFollowing ? this.colors.white
+					: undefined
+				}
+				background={this.isFollowing ? this.colors.major : undefined}
+			/>
 	}
 	
 

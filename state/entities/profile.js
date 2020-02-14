@@ -2,6 +2,8 @@ import { observable, computed } from 'mobx';
 
 import Entity from './entity';
 
+import { placeholder } from './utils';
+
 
 
 class Profile extends Entity {
@@ -14,7 +16,6 @@ class Profile extends Entity {
 
 		// State
 		this.type = "Profile"
-		this.state = observable.map()
 
 		// Methods
 		this.update = this.update.bind(this)
@@ -27,13 +28,27 @@ class Profile extends Entity {
 // GETTERS
 
 	@computed
-	get displayName() {
-		return this.state.get("name")
+	@placeholder("...")
+	get name() {
+		return this.state.get("displayName") || this.parent.placeholderName
 	}
 
 	@computed
+	@placeholder("")
 	get about() {
 		return this.state.get("about")
+	}
+
+	@computed
+	@placeholder(undefined)
+	get avatar() {
+		const address = this.state.get("picture")
+		if (address) {
+			const type = this.state.get("pictureType")
+			return `${this.nation.mediaURL.get()}${address}.${type}`
+		} else {
+			return undefined
+		}
 	}
 
 
@@ -41,7 +56,6 @@ class Profile extends Entity {
 // ACTIONS
 
 	update(newProfile) {
-		console.log("profile", newProfile)
 		return this.act("Update", "Updating Profile...", newProfile)
 	}
 

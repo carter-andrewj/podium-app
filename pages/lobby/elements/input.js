@@ -9,8 +9,6 @@ import Spinner from '../../../components/animated/spinner';
 import FadingView from '../../../components/animated/fadingView';
 import FadingIcon from '../../../components/animated/fadingIcon';
 
-import styles from '../../../styles/styles';
-import settings from '../../../settings';
 
 
 
@@ -18,12 +16,10 @@ class LobbyInput extends Component {
 
 	constructor() {
 
-		super()
-		
-		// State
-		this.state = {
-			maskText: false
-		}
+		super({
+			maskText: false,
+			locked: false
+		})
 
 		// Settings (default values)
 		this.ready = false				// Component is ready to accept input
@@ -58,7 +54,6 @@ class LobbyInput extends Component {
 		this.submit = this.submit.bind(this)
 
 	}
-
 
 
 // GETTERS
@@ -412,9 +407,9 @@ class LobbyInput extends Component {
 			show={this.isVisible}
 			onShow={() => this.ready = true}
 			beforeHide={() => this.ready = false}
-			style={styles.lobby.inputContainer}>
+			style={this.style.lobby.inputContainer}>
 
-			<View style={styles.lobby.inputWrapper}>
+			<View style={this.style.lobby.inputWrapper}>
 
 				<TextInput
 
@@ -422,121 +417,120 @@ class LobbyInput extends Component {
 					key={this.name}
 
 					style={this.multiline ?
-						styles.input.multiLine :
-						styles.input.oneLine
+						this.style.lobby.multiInput :
+						this.style.lobby.singleInput
 					}
 					autoFocus={false}
 					blurOnSubmit={false}
 					autoCorrect={this.autoCorrect}
 					autoCapitalize={this.capitalize}
 					multiline={this.multiline}
-					secureTextEntry={this.state.maskText}
+					secureTextEntry={this.getState("maskText")}
 					
 					onChangeText={this.setValue}
 					value={this.data.get("value")}
 					placeholder={this.placeholder}
 
-					//returnKeyType={this.returnKeyType}
-					returnKeyLabel={this.returnKeyLabel}
+					returnKeyType={this.returnKeyType}
 					onSubmitEditing={!this.multiline ? this.submit : null}
 					
 				/>
 
 				<View
 					pointerEvents="none"
-					style={styles.lobby.overlay}>
+					style={this.style.lobby.overlay}>
 					<FadingView
 						animator={this.props.animator}
 						show={this.validating && this.filled}
-						style={styles.lobby.overlayRight}>
-						<Spinner color={settings.colors.neutral} />
+						style={this.style.lobby.overlayRight}>
+						<Spinner color={this.colors.neutral} />
 					</FadingView>
 				</View>
 
 				<View
 					pointerEvents="none"
-					style={styles.lobby.overlay}>
+					style={this.style.lobby.overlay}>
 					<FadingIcon
 						animator={this.props.animator}
 						show={this.error}
 						icon="ban"
-						containerStyle={styles.lobby.overlayRight}
-						color={settings.colors.bad}
-						size={settings.iconSize.medium}
+						containerStyle={this.style.lobby.overlayRight}
+						color={this.colors.bad}
+						size={this.style.font.size.normal}
 					/>
 				</View>
 
 				<View
 					pointerEvents="none"
-					style={styles.lobby.overlay}>
+					style={this.style.lobby.overlay}>
 					<FadingIcon
 						animator={this.props.animator}
 						show={this.valid}
 						icon="check"
-						containerStyle={styles.lobby.overlayRight}
-						color={settings.colors.good}
-						size={settings.iconSize.medium}
+						containerStyle={this.style.lobby.overlayRight}
+						color={this.colors.good}
+						size={this.style.font.size.normal}
 					/>
 				</View>
 
 				{!this.isFocus ?
 					<TouchableWithoutFeedback
 						onPress={() => this.props.setFocus(this.props.index)}>
-						<View style={styles.lobby.overlay} />
+						<View style={this.style.lobby.overlay} />
 					</TouchableWithoutFeedback>
 					: null
 				}
 
 				<View
 					pointerEvents="box-none"
-					style={styles.lobby.overlay}>
+					style={this.style.lobby.overlay}>
 					<FadingView
 						style={this.multiline ?
-							styles.lobby.overlayMulti
+							this.style.lobby.overlayMulti
 							:
-							styles.lobby.overlayLeft
+							this.style.lobby.overlayLeft
 						}
 						animator={this.props.animator}
-						show={this.skippable && !this.filled}>
+						show={this.skippable && !this.filled && this.isFocus}>
 						<Button
 							onPress={() => this.props.next(this.props.index + 1)}
 							color="transparent"
 							label="SKIP"
-							labelStyle={styles.lobby.overlayText}
+							labelStyle={this.style.lobby.overlayText}
 						/>
 					</FadingView>
 				</View>
 
 				<View
 					pointerEvents="box-none"
-					style={styles.lobby.overlay}>
+					style={this.style.lobby.overlay}>
 					<FadingView
-						style={styles.lobby.overlayMulti}
+						style={this.style.lobby.overlayMulti}
 						animator={this.props.animator}
 						show={this.multiline && this.filled}>
 						<Button
 							onPress={() => this.props.next(this.props.index + 1)}
 							color="transparent"
 							icon="arrow-right"
-							iconColor={settings.colors.major}
-							style={styles.lobby.nextButton}
+							iconColor={this.colors.major}
+							style={this.style.lobby.nextButton}
 						/>
 					</FadingView>
 				</View>
 
 				<View
 					pointerEvents="box-none"
-					style={styles.lobby.overlay}>
+					style={this.style.lobby.overlay}>
 					<FadingView
-						style={styles.lobby.overlayLeft}
+						style={this.style.lobby.overlayLeft}
 						animator={this.props.animator}
 						show={this.secure}>
 						<Button
-							style={styles.lobby.overlayLeft}
-							onPress={this.state.maskText ? this.showText : this.maskText}
+							style={this.style.lobby.overlayLeft}
+							onPress={this.getState("maskText") ? this.showText : this.maskText}
 							color="transparent"
-							icon={this.state.maskText ? "eye-slash" : "eye"}
-							iconColor={settings.colors.neutralDark}
+							icon={this.getState("maskText") ? "eye-slash" : "eye"}
+							iconColor={this.colors.neutralDark}
 						/>
 					</FadingView>
 				</View>
@@ -545,54 +539,50 @@ class LobbyInput extends Component {
 
 
 			<FadingView
-				style={styles.input.caption}
+				style={this.style.lobby.caption}
 				animator={this.props.animator}
 				show={caption === "error"}>
-				<Text style={styles.text.error}>
+				<Text style={this.style.text.bad}>
 					{this.data.get("errorMessage") || "..."}
 				</Text>
 			</FadingView>
 			
 
 			<FadingView
-				style={styles.input.caption}
+				style={this.style.lobby.caption}
 				animator={this.props.animator}
-				show={caption === "empty"}
-				suppressShow={this.props.mode === "signin"}>
-				<Text style={styles.text.neutral}>
+				show={caption === "empty"}>
+				<Text style={this.style.text.neutral}>
 					{this.caption.empty || "..."}
 				</Text>
 			</FadingView>
 
 
 			<FadingView
-				style={styles.input.caption}
+				style={this.style.lobby.caption}
 				animator={this.props.animator}
-				show={caption === "validating"}
-				suppressShow={this.props.mode === "signin"}>
-				<Text style={styles.text.neutral}>
+				show={caption === "validating"}>
+				<Text style={this.style.text.neutral}>
 					{this.caption.validating || "validating"}
 				</Text>
 			</FadingView>
 			
 
 			<FadingView
-				style={styles.input.caption}
+				style={this.style.lobby.caption}
 				animator={this.props.animator}
-				show={caption === "valid"}
-				suppressShow={this.props.mode === "signin"}>
-				<Text style={styles.text.good}>
+				show={caption === "valid"}>
+				<Text style={this.style.text.good}>
 					{this.caption.valid || "valid"}
 				</Text>
 			</FadingView>
 
 
 			<FadingView
-				style={styles.input.caption}
+				style={this.style.lobby.caption}
 				animator={this.props.animator}
-				show={caption === "placeholder"}
-				suppressShow={this.props.mode === "signin"}>
-				<Text style={styles.text.white}>
+				show={caption === "placeholder"}>
+				<Text style={this.style.text.hide}>
 					{"..."}
 				</Text>
 			</FadingView>
