@@ -292,7 +292,8 @@ const config = {
 			wingInset: 0.15,		// Background visible at edge of swiped post (% of screen width)
 			headerHeight: 0.06,		// Height of post header - name, @identity, etc.. (% of screen width)
 			mediaAspectRatio: 0.5625,	// Default aspect ratio (vs post width) of a single item of media
-			thumbnailCount: 2.8		// Number of thumbnails to fit across a post before scrolling
+			thumbnailCount: 2.8,		// Number of thumbnails to fit across a post before scrolling
+			popularitySize: 0.6,		// Width of popularity chart (% of post content width)
 		},
 
 		// Link Previews

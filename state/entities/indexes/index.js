@@ -1,4 +1,5 @@
 import { observable, computed, action } from 'mobx';
+import { List } from 'immutable';
 
 import Entity from '../entity';
 
@@ -90,6 +91,10 @@ class Index extends Entity {
 
 	reduce(operator, empty) {
 		return this.state.reduce(operator, empty)
+	}
+
+	filter(callback) {
+		return List(this.meta.toJS()).filter(callback)
 	}
 
 

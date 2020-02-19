@@ -47,7 +47,7 @@ export default Style => class ButtonStyle extends Style {
 				...this.container,
 				...this.withHeight(this.layout.button.normal.height),
 				minWidth: this.layout.button.normal.height,
-				...this.withBorder("transparent")
+				...this.withBorder("transparent"),
 			},
 
 			// Formating of text label on the button
@@ -62,7 +62,7 @@ export default Style => class ButtonStyle extends Style {
 
 			// Formatting when the button is in loading state
 			loading: {
-				color: this.colors.neutral,
+				color: this.colors.neutralDark,
 				backgroundColor: this.colors.white,
 				borderColor: this.colors.white,
 			},

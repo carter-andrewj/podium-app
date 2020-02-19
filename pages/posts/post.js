@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from 'expo-fontawesome';
 import { toJS, computed } from 'mobx';
 import { inject, observer } from 'mobx-react';
 
-import { Map, List } from 'immutable';
+import { Map, List, Range } from 'immutable';
 
 import TouchableWithoutFeedback from '../../components/inputs/touchableWithoutFeedback';
 
@@ -506,6 +506,17 @@ class Post extends Component {
 		})
 
 
+		// Unpack reactions
+		let reactValues = Range(-10, 9)
+			.map(n => this.post.reactions
+				.filter(r => r.value >= n && r.value < (n + 1))
+				.size
+			)
+			.toJS()
+		console.log(reactValues)
+		let reactMax = Math.max(0.0, ...reactValues)
+
+
 		// Build components
 		return <View
 			key={this.props.keyName}
@@ -686,11 +697,11 @@ class Post extends Component {
 								animator={this.controlAnimator}
 								style={this.style.post.rewardPanel}>
 								{rewards.pod && rewards.pod > 0 ?
-									<Currency token="pod" value={rewards.pod} />
+									<Currency delta token="pod" value={rewards.pod} />
 									: null
 								}
 								{rewards.aud && rewards.aud > 0 ?
-									<Currency token="aud" value={rewards.aud} />
+									<Currency delta token="aud" value={rewards.aud} />
 									: null
 								}
 							</FadingView>
@@ -700,13 +711,13 @@ class Post extends Component {
 								show={this.stage === "reacted"}
 								animator={this.controlAnimator}
 								style={this.style.post.controlPanel}>
-								<SquareButton
-									icon="exclamation-triangle"
-									onPress={() => console.log("report")}
-								/>
 								<SquareButton 
 									icon="bullhorn"
 									onPress={() => console.log("promote")}
+								/>
+								<SquareButton
+									icon="quote-right"
+									onPress={() => console.log("quote")}
 								/>
 								<SquareButton
 									icon="comment-medical"
@@ -775,62 +786,57 @@ class Post extends Component {
 						pointerEvents="none"
 						style={this.style.post.right}>
 
-						<View style={this.style.post.rightHeader}>
+						<View style={this.style.post.rightCounters}>
 
-							<Text style={this.style.post.timestamp}>
-								{this.post.date}
-							</Text>
-
-							{this.post.cost.pod > 0 ?
-								<View style={this.style.post.cost}>
-									<FontAwesomeIcon
-										icon="coins"
-										color={this.style.colors.pod}
-										style={this.style.post.costIcon}
-									/>
-									<Text style={this.style.post.costText}>
-										{this.post.cost.pod}
-									</Text>
-								</View>
-								: null
-							}
-
-							{this.post.cost.aud > 0 ?
-								<View style={this.style.post.cost}>
-									<FontAwesomeIcon
-										icon="coins"
-										color={this.style.colors.aud}
-										style={this.style.post.costIcon}
-									/>
-									<Text style={this.style.post.costText}>
-										{this.post.cost.aud}
-									</Text>
-								</View>
-								: null
-							}
+							<SquareButton
+								label={this.post.promotionCount}
+								onPress={() => console.log("view promos")}
+							/>
+							<SquareButton
+								label={this.post.quoteCount}
+								onPress={() => console.log("view quotes")}
+							/>
+							<SquareButton
+								label={this.post.replyCount}
+								onPress={() => console.log("view replies")}
+							/>
 
 						</View>
 
 						<View style={this.style.post.rightCore}>
-						
-							<View style={this.style.post.rightCounters}>
 
-								<SquareButton
-									label={this.post.promotionCount}
-									onPress={() => console.log("view promos")}
-								/>
-								<SquareButton
-									label={this.post.replyCount}
-									onPress={() => console.log("view replies")}
-								/>
-
+							<View style={this.style.post.rightHeader}>
+								<Text style={this.style.post.timestamp}>
+									{this.post.date}
+								</Text>
 							</View>
 
+							<View style={this.style.post.rightBody}>
+								
+								<View style={this.style.post.rightCost}>
+									<Currency currency="pod" value={this.post.cost.pod} />
+									<Currency currency="aud" value={this.post.cost.aud} />
+								</View>
 
-							<View style={this.style.rightBody}>
-								<Text>
-									[REACTION RESULTS GO HERE]
-								</Text>
+								<View style={this.style.post.popularityHolder}>
+
+									<View style={this.style.post.popularityChart}>
+
+										{reactValues.map((v, i) => <View
+											key={`${this.post.keyName}-react-hist-${i}`}
+											style={{
+												...this.style.post.popularityBar,
+												height: reactMax === 0 ? 0 :
+													Math.round(this.layout.post.popularity.height * (v / reactMax))
+											}}
+										/>)}
+
+										<View style={this.style.post.popularityAxis} />
+
+									</View>
+
+								</View>
+
 							</View>
 
 						</View>
@@ -838,16 +844,16 @@ class Post extends Component {
 						<View style={this.style.post.rightEdge}>
 
 							<SquareButton
-								icon="share"
-								onPress={() => console.log("quote")}
+								icon="exclamation-triangle"
+								onPress={() => console.log("report")}
 							/>
 							<SquareButton 
-								icon="quote-right"
+								icon="coins"
 								onPress={() => console.log("paid promotion")}
 							/>
 							<SquareButton
-								icon="exclamation-triangle"
-								onPress={() => console.log("copy")}
+								icon="bookmark"
+								onPress={() => console.log("bookmark")}
 							/>
 
 						</View>

@@ -12,6 +12,9 @@ export default class Currency extends Component {
 
 	render() {
 
+		// Ignore if no value provided
+		if (!this.props.value) return null
+
 		// Determine colours
 		let tokenColor = this.colors[this.props.token || "pod"]
 		let color = this.props.value > 0 ? tokenColor : this.colors.bad
@@ -24,7 +27,7 @@ export default class Currency extends Component {
 					...this.style.currency.text,
 					color
 				}}>
-				{`${this.props.value > 0 ? "+" : ""}${this.props.value} `}
+				{`${(this.props.delta && this.props.value > 0) ? "+" : ""}${this.props.value} `}
 			</Text>
 			<FontAwesomeIcon
 				icon="dot-circle"

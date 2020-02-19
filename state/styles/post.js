@@ -18,7 +18,8 @@ export default Style => class PostStyle extends Style {
 	compilePost() {
 
 		// Unpack settings
-		const { wingInset, headerHeight, mediaAspectRatio, thumbnailCount } = this.settings.post
+		const { wingInset, headerHeight, mediaAspectRatio,
+				thumbnailCount, popularitySize } = this.settings.post
 
 		// Calculate dimensions
 		const postInset = this.layout.screen.width * wingInset
@@ -28,7 +29,9 @@ export default Style => class PostStyle extends Style {
 							  postWingOverlap - this.layout.margin
 		const postHeaderHeight = Math.round(this.layout.screen.width * headerHeight)
 		const postHeight = (3 * this.layout.button.normal.height) + (3 * this.layout.margin)
-		const postContentWidth = postWidth - (1.5 * postWingOverlap) - (2 * this.layout.margin)
+		const bodyWidth = postWidth - (1.5 * postWingOverlap) - (2 * this.layout.margin)
+		const bodyHeight = Math.round(postHeight - (2 * this.layout.margin) - postHeaderHeight)
+		const popularityWidth = popularitySize * bodyWidth
 
 		// Extend layout
 		this.layout.post = {
@@ -61,18 +64,24 @@ export default Style => class PostStyle extends Style {
 			},
 			core: {
 				height: postHeight - (2 * this.layout.margin),
-				width: postContentWidth + this.layout.margin,
+				width: bodyWidth + this.layout.margin,
 			},
 			body: {
-				height: Math.round(postHeight - (2 * this.layout.margin) - postHeaderHeight),
-				width: postContentWidth,
+				height: bodyHeight,
+				width: bodyWidth,
 				media: {
-					height: Math.round(mediaAspectRatio * postContentWidth),
-					thumbnail: Math.round((postContentWidth - (this.layout.margin * Math.floor(thumbnailCount))) / thumbnailCount),
+					height: Math.round(mediaAspectRatio * bodyWidth),
+					thumbnail: Math.round((bodyWidth - (this.layout.margin * Math.floor(thumbnailCount))) / thumbnailCount),
 				}
 			},
 			reactor: {
 				countdownHeight: Math.round(this.layout.button.normal.height * 2.0),
+			},
+			popularity: {
+				width: popularityWidth,
+				height: bodyHeight - Math.round(this.layout.margin * 2.0),
+				axis: 2,
+				bar: popularityWidth / 20.0,
 			},
 		}
 
@@ -366,16 +375,71 @@ export default Style => class PostStyle extends Style {
 				...column,
 				...this.withWidth(this.layout.post.wing.right.width),
 				marginLeft: 0,
-				backgroundColor: "orange",
 			},
 
-			counter: {
-				...this.text.body,
+			rightCounters: {
+				...controls
+			},
+
+			rightCore: {
+				...this.container,
+			},
+
+			rightHeader: {
+				...this.container,
+				...this.withWidth(this.layout.post.wing.right.body),
+				...this.withHeight(this.layout.post.header.height),
+			},
+
+			timestamp: {
 				width: "100%",
-				paddingBottom: 0,
-				paddingRight: Math.round(this.font.size.tiny * 0.5),
-				textAlign: "right",
-				fontSize: this.font.size.tiny,
+				...this.text.body,
+				textAlign: "center",
+				color: this.colors.neutralDark,
+			},
+
+			rightBody: {
+				...this.row
+			},
+
+			cost: {
+				...this.container,
+			},
+
+			popularityHolder: {
+				...this.container,
+				...this.withWidth(this.layout.post.popularity.width),
+				padding: this.layout.margin,
+			},
+
+			popularityChart: {
+				...this.row,
+				...this.withHeight(this.layout.post.popularity.height),
+				justifyContent: "flex-end",
+				borderBottomWidth: this.layout.post.popularity.axis,
+				borderBottomColor: this.colors.black,
+			},
+
+			popularityAxis: {
+				...this.container,
+				position: "absolute",
+				...this.withHeight(this.layout.post.popularity.height),
+				width: this.layout.post.popularity.axis,
+				left: Math.round(0.5 * (this.layout.post.popularity.width -
+										this.layout.post.popularity.axis)),
+				backgroundColor: this.colors.black,
+			},
+
+			popularityBar: {
+				...this.container,
+				...this.withWidth(this.layout.post.popularity.bar),
+			},
+
+			rightEdge: {
+				...this.container,
+				...this.withWidth(this.layout.post.wing.edge.width),
+				...this.withHeight(this.layout.post.core.height),
+				justifyContent: "space-between",
 			},
 
 

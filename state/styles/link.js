@@ -18,13 +18,13 @@ export default Style => class LinkStyle extends Style {
 	compileLink() {
 
 		// Unpack settings
-		const { imageHeight, corners } = this.settings.link
+		const { corners } = this.settings.link
+		const image = (this.layout.button.normal.height + this.layout.margin) * 3
 		const height = Math.round(
 			this.layout.button.normal.height +
 			(this.layout.margin * 2.5) +
 			this.layout.gauge.height
 		)
-		const image = Math.round(imageHeight * this.layout.screen.width)
 		const corner = Math.round(image * this.settings.media.avatar.corner)
 
 		// Extend layout
@@ -40,18 +40,23 @@ export default Style => class LinkStyle extends Style {
 					height: this.layout.button.normal.height,
 					icon: Math.round(this.layout.button.normal.height - (1.6 * this.layout.margin)),
 					title: {
+						full: Math.round(
+							this.layout.post.body.width -
+							(2.0 * this.layout.margin) -
+							this.layout.button.normal.height
+						),
 						width: Math.round(
 							this.layout.post.body.width -
 							(3.0 * this.layout.margin) -
 							(2.0 * this.layout.button.normal.height)
-						)
-					}
+						),
+					},
 				},
 				footer: {
 					height: this.layout.gauge.height,
 					source: {
 						width: Math.round(this.layout.post.body.width -
-							this.layout.gauge.width - (0.5 * corner))
+							this.layout.gauge.width - (0.5 * corner)),
 					}
 				}
 			},
@@ -79,7 +84,6 @@ export default Style => class LinkStyle extends Style {
 				borderBottomRightRadius: this.layout.link.body.corners.big,
 				marginTop: this.layout.post.padding,
 			},
-
 
 
 
@@ -161,6 +165,14 @@ export default Style => class LinkStyle extends Style {
 			title: {
 				...this.text.body,
 				...this.withWidth(this.layout.link.body.header.title.width),
+				fontSize: this.font.size.smallest,
+				lineHeight: this.font.size.smaller,
+			},
+
+			titleFull: {
+				...this.text.body,
+				...this.withWidth(this.layout.link.body.header.title.full),
+				marginRight: this.layout.margin,
 				fontSize: this.font.size.smallest,
 				lineHeight: this.font.size.smaller,
 			},

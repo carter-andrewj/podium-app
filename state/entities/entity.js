@@ -29,6 +29,7 @@ class Entity {
 		this.history = observable.map()
 		this.attributes = observable.map({}, { deep: false })
 		this.wallet = observable.map({}, { deep: false })
+		this.meta = observable.map({}, { deep: false })
 
 		// Sync
 		this.syncing = observable.box(false)	// True when new data is being processed
@@ -231,7 +232,7 @@ class Entity {
 
 
 	@action.bound
-	setData({ timestamp, history, state, wallet, parent, created, updated }) {
+	setData({ timestamp, history, state, wallet, meta, parent, created, updated }) {
 
 		// Update timestamp
 		this.latest.set(timestamp)
@@ -246,6 +247,9 @@ class Entity {
 
 		// Update wallet
 		if (wallet) this.wallet.replace(wallet)
+
+		// Update metadata
+		if (meta) this.meta.replace(meta)
 
 		// Update history
 		this.history.replace(history)

@@ -74,6 +74,7 @@ export default Style => class CoreStyle extends Style {
 			headerButton: {
 				...this.container,
 				...this.withSize(this.layout.core.header.height),
+				borderRadius: this.layout.core.header.height,
 			},
 
 			// Content above navigation footer

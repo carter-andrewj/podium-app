@@ -884,16 +884,16 @@ class Compose extends Page {
 				<Button
 					containerStyle={this.style.core.headerButton}
 					onPress={() => this.props.navigator.back(1)}
-					icon="arrow-left"
+					iconColor={this.colors.neutralDark}
+					icon="trash-alt"
 					iconSize={this.layout.core.header.icon}
 				/>
 
 				<Button
 					containerStyle={this.style.core.headerButton}
 					onPress={this.send}
-					color={this.colors.major}
-					icon="share"
-					iconColor={this.colors.white}
+					iconColor={this.colors.major}
+					icon="comment-medical"
 					iconSize={this.layout.core.header.icon}
 				/>
 
@@ -913,22 +913,11 @@ class Compose extends Page {
 				<View style={this.style.post.middle}>
 
 					<View style={this.style.post.middleLeft}>
-
 						<Avatar
 							corner="right"
 							user={this.activeUser}
 							style={this.style.post.avatar}
 						/>
-
-						<View style={this.style.compose.costHolder}>
-
-							<Currency
-								value={-10}
-								style={this.style.compose.cost}
-							/>
-
-						</View>
-
 					</View>
 
 					<View style={this.style.post.middleCore}>
@@ -941,7 +930,16 @@ class Compose extends Page {
 
 						<View style={this.style.post.body}>
 
+
 							<View style={this.style.compose.content}>
+
+								<FadingView style={this.style.compose.costHolder}>
+									<Currency
+										delta={true}
+										value={-10}
+										style={this.style.compose.cost}
+									/>
+								</FadingView>
 
 								<TextInput
 
@@ -994,13 +992,75 @@ class Compose extends Page {
 
 							</View>
 
+
+							<FadingView
+								show={this.getState("media").length > 0}
+								style={this.style.compose.galleryHolder}>
+
+								<View style={this.style.compose.costHolder}>
+									<Currency
+										delta={true}
+										value={-10}
+										style={this.style.compose.cost}
+									/>
+								</View>
+
+								<Gallery
+									keyName="compose"
+									media={this.getState("media")}
+									overlay={this.removeMedia}
+								/>
+
+							</FadingView>
+
+
+							<View style={this.style.compose.referenceHolder}>
+								{Map(this.getState("links"))
+									.map((link, key) => {
+										return <FadingView
+											key={key}
+											show={link.active}
+											style={this.style.compose.reference}>
+
+											<View style={this.style.compose.costHolder}>
+												<Currency
+													delta={true}
+													value={-10}
+													style={this.style.compose.cost}
+												/>
+											</View>
+
+											{link.loading || link.valid === undefined ?
+												<Text>Loading...</Text>
+											: link.valid ?
+												<Text>Found</Text>
+											:
+												<Text>Not found</Text>
+											}
+
+										</FadingView>
+									})
+									.toList()
+								}
+							</View>
+
+
 							<View style={this.style.compose.referenceHolder}>
 								{Map(this.getState("references"))
-									.filter(r => r.active)
 									.map((reference, key) => {
-										return <View
+										return <FadingView
 											key={key}
+											show={reference.active}
 											style={this.style.compose.reference}>
+
+											<View style={this.style.compose.costHolder}>
+												<Currency
+													delta={true}
+													value={-10}
+													style={this.style.compose.cost}
+												/>
+											</View>
+
 											{reference.loading || reference.valid === undefined ?
 												<Text>Loading...</Text>
 											: reference.valid ?
@@ -1008,17 +1068,12 @@ class Compose extends Page {
 											:
 												<Text>Not found</Text>
 											}
-										</View>
+
+										</FadingView>
 									})
 									.toList()
 								}
 							</View>
-
-							<Gallery
-								keyName="compose"
-								media={this.getState("media")}
-								overlay={this.removeMedia}
-							/>
 
 						</View>
 
