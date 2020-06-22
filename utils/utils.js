@@ -10,10 +10,17 @@ export function isFunction(obj) {
 
 
 export function formatNumber(n) {
-	return (n > 1000000) ?
-			`${Math.round(n / 1000000.0).toFixed(2)}M`
-		: (n > 1000) ?
-			`${Math.round(n / 1000.0).toFixed(2)}k`
+
+	// Handle undefined
+	if (n === 0) return `${n}`
+	if (!n) return "-"
+		
+	return (n >= 1000000) ?
+			`${Math.round(n / 1000000.0).toFixed(1)}M`
+		: (n >= 10000) ?
+			`${Math.round(n / 1000.0).toFixed(0)}k`
+		: (n >= 1000) ?
+			`${Math.round(n / 1000.0).toFixed(1)}k`
 		:
 			`${Math.round(n)}`
 }
@@ -35,6 +42,10 @@ export function formatDate(timestamp) {
 	)
 }
 
+export function formatTime(timestamp) {
+	return new Date(timestamp).toLocaleTimeString(Localization.locale)
+}
+
 
 
 // Converts an unbounded value v into an exponential magnitude
@@ -45,8 +56,8 @@ export function formatDate(timestamp) {
 // between +/- 1.
 export function magnitude(v, c) {
 
-	// Use default coefficient of 1/root-2, if not provided
-	if (!c) c = 1.0 / Math.pow(2.0, 0.5)
+	// Use default coefficient of 1/(2*root-2), if not provided
+	if (!c) c = 1.0 / (2.0 * Math.pow(2.0, 0.5))
 
 	// Normalize value magnitude
 	let x = Math.pow(Math.abs(v), c)
@@ -144,3 +155,12 @@ export function colorPercentage(p, colors) {
 		`${g.length === 1 ? `0${g}` : g}${b.length === 1 ? `0${b}` : b}` 
 
 }
+
+
+export function fromHex(hex, a = 1.0) {
+	let r = parseInt(hex.slice(1, 3), 16)
+	let g = parseInt(hex.slice(3, 5), 16)
+	let b = parseInt(hex.slice(5, 7), 16)
+	return `rgba(${r},${g},${b},${a})`
+}
+

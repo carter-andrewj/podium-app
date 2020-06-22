@@ -18,6 +18,7 @@ import PostIndex from './indexes/postIndex';
 import ReplyIndex from './indexes/replyIndex';
 import TokenIndex from './indexes/tokenIndex';
 import OwnableIndex from './indexes/ownableIndex';
+import PromotionIndex from './indexes/promotionIndex';
 import ReactionIndex from './indexes/reactionIndex';
 
 
@@ -46,6 +47,7 @@ function getEntity(type) {
 		case "replyindex": return ReplyIndex
 		case "tokenindex": return TokenIndex
 		case "ownableindex": return OwnableIndex
+		case "promotionindex": return PromotionIndex
 		case "reactionindex": return ReactionIndex
 
 		default: 

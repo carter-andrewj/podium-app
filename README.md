@@ -64,7 +64,7 @@ With a remote server, anyone can test the app on their local device by installin
 
 ## Codebase
 
-*Note: there are currently various "old" areas of the codebase being kept around for reference (or, in some cases, just because tidying them up is low-priority). These are either directly marked (with either the file or its containing folder named "old" or have the comment `// DEPRECIATED //` at the start of the file.*
+*Note: there are currently various "old" areas of the codebase being kept around for reference (or, in some cases, just because tidying them up is low-priority). These are either directly marked (with either the file or its containing folder named "old") or have the comment `// DEPRECIATED //` at the start of the file.*
 
 The app codebase is divided into 4 sections:
 

@@ -18,29 +18,45 @@ export default Style => class PostStyle extends Style {
 	compilePost() {
 
 		// Unpack settings
-		const { wingInset, headerHeight, mediaAspectRatio,
+		const { wingInset, headerHeight, mediaAspectRatio, popularityAxis,
 				thumbnailCount, popularitySize } = this.settings.post
 
 		// Calculate dimensions
-		const postInset = this.layout.screen.width * wingInset
 		const postWidth = this.layout.screen.width - (2 * this.layout.margin)
+
+		const postInset = this.layout.screen.width * wingInset
 		const postWingOverlap = 2 * this.layout.button.normal.height
 		const postWingWidth = this.layout.screen.width - postInset -
 							  postWingOverlap - this.layout.margin
+
 		const postHeaderHeight = Math.round(this.layout.screen.width * headerHeight)
 		const postHeight = (3 * this.layout.button.normal.height) + (3 * this.layout.margin)
+		
 		const bodyWidth = postWidth - (1.5 * postWingOverlap) - (2 * this.layout.margin)
 		const bodyHeight = Math.round(postHeight - (2 * this.layout.margin) - postHeaderHeight)
-		const popularityWidth = popularitySize * bodyWidth
+		
+		const barWidth = Math.round((postWingWidth - (2 * this.layout.button.normal.height) - (2 * this.layout.margin)) / 20.0)
+		const popularityWidth = barWidth * 20
+		const popularityHeight = bodyHeight - popularityAxis - (2 * this.layout.border)
+
+		const defaultOffset = this.layout.screen.width - postWingOverlap - postInset
+		const wingOffset = defaultOffset + postInset - (2 * this.layout.margin)
 
 		// Extend layout
 		this.layout.post = {
 			height: postHeight,
 			width: postWidth,
-			offset: this.layout.screen.width - postWingOverlap - postInset,
-			span: Math.round(this.layout.screen.width - this.layout.button.normal.height -
-							 (1.5 * this.layout.margin)),
-			fullWidth: postWidth + (2 * postWingWidth) + (4 * this.layout.margin),
+			offsets: {
+				default: defaultOffset,
+				author: wingOffset,
+				center: 0.0,
+				context: -1.0 * (wingOffset + this.layout.button.normal.height),
+				promote: -1 * ((2 * this.layout.button.normal.height) + this.layout.margin),
+			},
+			span: Math.round(this.layout.screen.width -
+				this.layout.button.normal.height - (1.5 * this.layout.margin)),
+			fullWidth: postWidth + (2 * postWingWidth) +
+				this.layout.button.normal.height + (4 * this.layout.margin),
 			padding: Math.round(this.layout.margin * 0.5),
 			wing: {
 				edge: {
@@ -79,9 +95,12 @@ export default Style => class PostStyle extends Style {
 			},
 			popularity: {
 				width: popularityWidth,
-				height: bodyHeight - Math.round(this.layout.margin * 2.0),
-				axis: 2,
-				bar: popularityWidth / 20.0,
+				height: popularityHeight,
+				axis: popularityAxis,
+				bar: {
+					height: popularityHeight - this.font.size.smallest,
+					width: barWidth,
+				}
 			},
 		}
 
@@ -105,6 +124,15 @@ export default Style => class PostStyle extends Style {
 			position: "absolute",
 			alignSelf: "center",
 			justifyContent: "center",
+		}
+
+		const promoteCounter = {
+			...this.container,
+			alignSelf: "center",
+			alignItems: "center",
+			...this.withWidth(this.layout.button.normal.height - this.layout.margin),
+			...this.withHeight(this.layout.button.normal.height - this.layout.margin),
+			borderRadius: this.layout.button.normal.height,
 		}
 
 
@@ -223,7 +251,7 @@ export default Style => class PostStyle extends Style {
 
 			name: {
 				...this.text.name,
-				fontSize: this.font.size.normal,
+				fontSize: this.font.size.small,
 			},
 
 			alias: {
@@ -322,9 +350,21 @@ export default Style => class PostStyle extends Style {
 				justifyContent: "space-between",
 			},
 
+			controlPanelInner: {
+				...this.container,
+				...this.withWidth(this.layout.button.normal.height),
+				...this.withHeight(this.layout.button.normal.height),
+			},
+
+			swapButton: {
+				position: "absolute"
+			},
+
 			rewardPanel: {
 				...controls,
-				justifyContent: "space-around",
+				justifyContent: "space-evenly",
+				paddingTop: this.layout.margin,
+				paddingBottom: this.layout.margin,
 			},
 
 
@@ -378,38 +418,122 @@ export default Style => class PostStyle extends Style {
 			},
 
 			rightCounters: {
-				...controls
+				...controls,
+				...this.withWidth(this.layout.button.normal.height),
+				justifyContent: "space-between",
+				position: "relative",
+			},
+
+			counter: {
+				...this.container,
+				transform: [
+					{ translateX: -1 * this.layout.margin },
+					{ scale: 0.8 }
+				],
+				...this.withBorder(this.colors.neutralPale),
+			},
+
+			counterText: {
+				fontSize: this.font.size.smallest,
+			},
+
+			promoteCounterPOD: {
+				...promoteCounter,
+				backgroundColor: this.colors.pod,
+			},
+
+			promoteCounterAUD: {
+				...promoteCounter,
+				backgroundColor: this.colors.aud,
+			},
+
+			promoteCounterText: {
+				...this.text.body,
+				width: "100%",
+				textAlign: "center",
+				color: this.colors.white,
+			},
+
+			rightControls: {
+				...controls,
+				...this.withWidth(this.layout.button.normal.height),
+				justifyContent: "space-between",
+				position: "relative",
+			},
+
+			contextButtonOn: {
+				backgroundColor: this.colors.neutralDark,
+				color: this.colors.white
+			},
+
+			contextButtonOff: {
+
+			},
+
+			contextButtonReactIcon: {
+				transform: [{ rotate: "90deg" }]
 			},
 
 			rightCore: {
 				...this.container,
+				...this.withHeight(this.layout.post.core.height),
+				...this.withBorder(this.colors.neutralDark),
+				padding: Math.round(0.5 * this.layout.margin),
+				justifyContent: "center",
+				marginRight: this.layout.margin,
+				marginTop: 0.5 * this.layout.border,
+				backgroundColor: this.colors.offWhite
 			},
 
 			rightHeader: {
 				...this.container,
+				justifyContent: "flex-start",
 				...this.withWidth(this.layout.post.wing.right.body),
 				...this.withHeight(this.layout.post.header.height),
 			},
 
+			timestampHolder: {
+				...this.row,
+				justifyContent: "flex-end",
+				...this.withHeight(this.font.size.small),
+				borderRadius: this.layout.margin,
+				paddingLeft: this.layout.margin,
+				paddingRight: this.layout.margin,
+			},
+
 			timestamp: {
-				width: "100%",
 				...this.text.body,
 				textAlign: "center",
+				fontSize: this.font.size.tiny,
 				color: this.colors.neutralDark,
 			},
 
 			rightBody: {
-				...this.row
+				...this.row,
+				justifyContent: "center",
+			},
+
+			costHolder: {
+				...this.container,
 			},
 
 			cost: {
+				...this.row,
+				marginBottom: this.layout.margin,
+			},
+
+			costIcon: {
+				fontSize: this.font.size.small,
+				color: this.colors.neutralDark
+			},
+
+			currencies: {
 				...this.container,
 			},
 
 			popularityHolder: {
 				...this.container,
 				...this.withWidth(this.layout.post.popularity.width),
-				padding: this.layout.margin,
 			},
 
 			popularityChart: {
@@ -420,19 +544,75 @@ export default Style => class PostStyle extends Style {
 				borderBottomColor: this.colors.black,
 			},
 
+			popularityPlaceholder: {
+				...this.container,
+				position: "absolute",
+			},
+
+			popularityPlaceholderText: {
+				...this.text.paragraph,
+				color: this.colors.neutralDark,
+				textAlign: "center",
+				fontSize: this.font.size.smallest,
+			},
+
+			popularityLabel: {
+				...this.row,
+				position: "absolute",
+				top: 0,
+				left: Math.round(
+					0.5 * (this.layout.post.popularity.width -
+						   this.layout.post.popularity.axis)),
+				...this.withHeight(this.font.size.tiny),
+				...this.withWidth(0),
+			},
+
 			popularityAxis: {
 				...this.container,
 				position: "absolute",
 				...this.withHeight(this.layout.post.popularity.height),
 				width: this.layout.post.popularity.axis,
-				left: Math.round(0.5 * (this.layout.post.popularity.width -
-										this.layout.post.popularity.axis)),
+				left: Math.round(
+					0.5 * (this.layout.post.popularity.width -
+						   this.layout.post.popularity.axis)),
 				backgroundColor: this.colors.black,
+			},
+
+			axisLabels: {
+				...this.row,
+				justifyContent: "space-between",
+				...this.withHeight(this.font.size.smallest),
+				...this.withWidth(this.layout.post.popularity.width),
+			},
+
+			popularityDown: {
+				transform: [
+					{ translateY: this.font.size.tiny * 0.13 },
+				],
+			},
+
+			popularityText: {
+				...this.text.body,
+				fontSize: this.font.size.tiniest,
+			},
+
+			popularityNumber: {
+				...this.text.body,
+				fontSize: this.font.size.tiny,
+				color: this.colors.neutralDarkest,
+			},
+
+			popularityUp: {
+				transform: [
+					{ translateY: this.font.size.tiny * 0.13 },
+					{ rotate: "180deg" }
+				],
 			},
 
 			popularityBar: {
 				...this.container,
-				...this.withWidth(this.layout.post.popularity.bar),
+				alignSelf: "flex-end",
+				...this.withWidth(this.layout.post.popularity.bar.width),
 			},
 
 			rightEdge: {

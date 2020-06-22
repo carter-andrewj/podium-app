@@ -11,7 +11,8 @@ import { Map, List, Range } from 'immutable';
 
 import TouchableWithoutFeedback from '../../components/inputs/touchableWithoutFeedback';
 
-import { formatPercentage, colorPercentage, magnitude } from '../../utils/utils';
+import { formatPercentage, colorPercentage, magnitude,
+		 formatNumber, fromHex } from '../../utils/utils';
 
 import FadingView from '../../components/animated/fadingView';
 import Avatar from '../../components/media/avatar';
@@ -42,6 +43,8 @@ class Post extends Component {
 
 			reaction: 0,
 
+			contextPanel: "reactions",
+
 			deltaCount: 0,
 			deltas: List(),
 
@@ -51,16 +54,27 @@ class Post extends Component {
 			rewards: {},
 			showRewards: false,
 
+			promotion: {
+				pod: 0,
+				aud: 0,
+			},
+
+			popularityLabelWidth: 0,
+
 		})
 
 		// Refs
 		this.container = React.createRef()
 
 		// Methods
+		this.setContextPanel = this.setContextPanel.bind(this)
+
 		this.beginSwipe = this.beginSwipe.bind(this)
+		this.offsetSwipe = this.offsetSwipe.bind(this)
 		this.swipe = this.swipe.bind(this)
 		this.endSwipe = this.endSwipe.bind(this)
 		this.panTo = this.panTo.bind(this)
+
 		this.lockPan = this.lockPan.bind(this)
 		this.unlockPan = this.unlockPan.bind(this)
 
@@ -73,12 +87,21 @@ class Post extends Component {
 		this.showRewards = this.showRewards.bind(this)
 		this.hideRewards = this.hideRewards.bind(this)
 
+		this.showPromoter = this.showPromoter.bind(this)
+		this.hidePromoter = this.hidePromoter.bind(this)
+		this.incrementPromotion = this.incrementPromotion.bind(this)
+		this.decrementPromotion = this.decrementPromotion.bind(this)
+		this.resetPromotion = this.resetPromotion.bind(this)
+
 		this.delta = this.delta.bind(this)
+
+		this.resizePopularityLabel = this.resizePopularityLabel.bind(this)
 
 		// Swipe
 		this.lock = false
-		this.location = new Animated.Value(0.0)
+		this.location = 0.0
 		this.offset = new Animated.Value(0.0)
+		this.pan = new Animated.Value(0.0)
 
 		// Reaction
 		this.controlAnimator = new Animator()
@@ -88,6 +111,11 @@ class Post extends Component {
 		this.reactCountdown = undefined
 		this.reactTimer = undefined
 		this.rewardTimer = undefined
+
+		// Promotion
+		this.promoting = false
+		this.promoteResetTimer = null
+		this.promoter = new Animated.Value(0.0)
 
 		// Dimensions
 		this.height = null
@@ -134,7 +162,21 @@ class Post extends Component {
 		clearTimeout(this.reactCountdown)
 		clearTimeout(this.reactTimer)
 		clearTimeout(this.rewardTimer)
+		clearTimeout(this.promoteResetTimer)
 	}
+
+
+
+// CONTEXT
+
+	get contextPanel() {
+		return this.getState("contextPanel")
+	}
+
+	setContextPanel(panel) {
+		this.updateState(state => state.set("contextPanel", panel))
+	}
+
 
 
 
@@ -146,11 +188,14 @@ class Post extends Component {
 
 		// Start swipe when x-movement is greater than both 
 		// y-movement and the pan threshold
-		let willSwipe = Math.abs(dx) > Math.abs(dy) &&
-			Math.abs(dx) > this.settings.swipe.threshold
+		let willSwipe = (Math.abs(dx) > Math.abs(dy)) &&
+			(Math.abs(dx) > this.settings.swipe.threshold)
 
 		// Lock feed scrolling, if swiping
-		if (willSwipe) this.props.feedScroll.lock()
+		if (willSwipe) {
+			this.props.feedScroll.lock()
+			this.offset.stopAnimation()
+		}
 
 		// Return result
 		return willSwipe
@@ -158,10 +203,21 @@ class Post extends Component {
 	}
 
 
+	offsetSwipe() {
+		if (this.promoting) {
+			this.offset.setOffset(this.layout.post.offsets.promote)
+		} else {
+			this.offset.setOffset(this.position)
+		}
+		this.offset.setValue(0)
+	}
+
+
 	overSwipe(x) {
-		return x > 0 ?
-			Math.pow(x, this.settings.swipe.overScroll) :
-			-1 * Math.pow(-1 * x, this.settings.swipe.overScroll)
+		let overScroll = this.settings.swipe.overScroll
+		let weight = this.frozen ? 0.7 : 1.0
+		let offset = Math.pow(Math.abs(x), overScroll * weight)
+		return x > 0 ? offset : -1 * offset
 	}
 
 
@@ -175,11 +231,11 @@ class Post extends Component {
 		const { dx } = gesture
 
 		// Decay movement beyond left border
-		if (this.location._value === -1.0 && dx < 0) {
+		if (dx < 0 && (this.location === -1.0 || this.frozen)) {
 			this.offset.setValue(this.overSwipe(dx))
 
 		// Decay movement beyond right border
-		} else if (this.location._value === 1.0 && dx > 0) {
+		} else if (dx > 0 && (this.location === 1.0 || this.frozen)) {
 			this.offset.setValue(this.overSwipe(dx))
 
 		// Otherwise, move with gesture
@@ -193,9 +249,19 @@ class Post extends Component {
 
 	endSwipe(_, { dx }) {
 
+		// Remove offset
+		this.offset.flattenOffset()
+
+		// Ignore new position when promoting
+		if (this.promoting) return this.showPromoter()
+
+		// Ignore new position when reacting
+		if (this.frozen) return this.panTo(0.0)
+
 		// Get movement as % of screen width
 		let delta = dx / this.layout.screen.width
 
+		// Pan to nearest interval
 		if (delta < -1 * this.settings.swipe.xLimit) {
 			this.panTo(-1.0)
 		} else if (delta > this.settings.swipe.xLimit) {
@@ -216,23 +282,35 @@ class Post extends Component {
 	}
 
 
+	get frozen() {
+		return this.promoting //|| this.post.reacted
+	}
+
+
+	get intervals() {
+		return [
+			this.layout.post.offsets.context,
+			this.layout.post.offsets.center,
+			this.layout.post.offsets.author,
+		]
+	}
+
+	get position() {
+		return this.intervals[this.location + 1]
+	}
+
+
 	panTo(x) {
 
 		// Calculate new location
-		let destination = Math.min(1.0, Math.max(-1.0, x + this.location._value))
+		this.location = Math.min(1.0, Math.max(-1.0, x + this.location))
 
 		// Move window
 		Animated
-			.parallel([
-				Animated.spring(this.location, {
-					toValue: destination,
-					bounciness: this.settings.swipe.bounce,
-				}),
-				Animated.spring(this.offset, {
-					toValue: 0.0,
-					bounciness: this.settings.swipe.bounce,
-				})
-			])
+			.spring(this.offset, {
+				toValue: this.position,
+				bounciness: this.settings.swipe.bounce,
+			})
 			.start(({ finished }) => {
 				if (finished) this.props.feedScroll.unlock()
 			})
@@ -434,6 +512,79 @@ class Post extends Component {
 
 
 
+// PROMOTION
+
+	get promoting() {
+		return this.getState("promoting")
+	}
+
+	showPromoter() {
+		this.updateState(
+			state => state.set("promoting", true),
+			Animated
+				.parallel([
+					Animated.timing(this.promoter, {
+						toValue: 1.0,
+						duration: this.timing.fade * 0.5
+					}),
+					Animated.spring(this.offset, {
+						toValue: this.layout.post.offsets.promote,
+						bounciness: this.settings.swipe.bounce,
+					}),
+				])
+				.start
+		)
+	}
+
+	hidePromoter() {
+		this.updateState(
+			state => state.set("promoting", false),
+			Animated
+				.parallel([
+					Animated.timing(this.promoter, {
+						toValue: 0.0,
+						duration: this.timing.fade * 0.8,
+					}),
+					Animated.spring(this.offset, {
+						toValue: this.position,
+						bounciness: this.settings.swipe.bounce,
+					}),
+				])
+				.start
+		)
+	}
+
+
+	incrementPromotion(token) {
+		if (this.getState("promotion", token) < this.activeUser.balance[token]) {
+			this.updateState(state => state
+				.updateIn(["promotion", token], u => u + 1)
+			)
+		}
+	}
+
+	decrementPromotion(token) {
+		if (this.getState("promotion", token) > 0) {
+			this.updateState(state => state
+				.updateIn(["promotion", token], u => u - 1)
+			)
+		}
+	}
+
+	resetPromotion() {
+		this.updateState(
+			state => state.set("promotion", Map({
+				pod: 0,
+				aud: 0,
+			})),
+			() => this.promoteResetTimer = setTimeout(this.hidePromoter, this.timing.fade)
+		)
+	}
+
+
+
+
+
 // RENDER
 
 
@@ -478,46 +629,231 @@ class Post extends Component {
 	}
 
 
+	resizePopularityLabel({ nativeEvent }) {
+		this.updateState(state => state
+			.set("popularityLabelWidth", nativeEvent.layout.width)
+		)
+	}
+
+
+	get contextPanelComponent() {
+		switch (this.contextPanel) {
+
+			// Reactions
+			case "reactions":
+
+				// Unpack reactions
+				let reactValues = Range(-10, 10)
+					.map(n => n / 10.0)
+					.map(n => this.post.reactions
+						.filter(r => r.value >= n && r.value < (n + 0.1))
+						.size
+					)
+					.toJS()
+
+				//reactValues = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+				//reactValues = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+				reactValues = [121, 205, 444, 2031, 5332, 6342, 6128, 2034, 1643, 975, 1043, 4981, 8430, 12112, 16321, 14327, 15332, 9234, 3211, 304]
+				
+
+				let reactMax = Math.max(0.0, ...reactValues)
+				let axisOffset = 0.5 * this.post.popularity * this.layout.post.popularity.width
+
+				return <View style={this.style.post.rightBody}>
+
+					<View style={this.style.post.popularityHolder}>
+
+						{this.post.popularity ?
+							<View style={{
+									...this.style.post.popularityLabel,
+									transform: [{ translateX: axisOffset }],
+									justifyContent: (this.post.popularity < 0) ?
+										"flex-start" :
+										"flex-end"
+								}}>
+								<Text
+									onLayout={this.resizePopularityLabel}
+									style={{
+										...this.style.post.popularityText,
+										position: "absolute",
+										color: colorPercentage(
+											(1.0 + this.post.popularity) / 2.0,
+											[this.colors.bad, this.colors.neutralDarkest, this.colors.good]
+										)
+									}}>
+									{` ${this.post.popularity > 0 ? "+" : " "}${Math.floor(this.post.popularity * 100)}% `}
+								</Text>
+							</View>
+							: null
+						}
+
+						<View style={this.style.post.popularityChart}>
+
+							{this.post.reactions.hasSynced ?
+								reactValues.map((v, i) => <View
+									key={`${this.post.keyName}-react-hist-${i}`}
+									style={{
+										...this.style.post.popularityBar,
+										backgroundColor: colorPercentage(
+											i / 19.0,
+											[this.colors.bad, this.colors.neutralDark, this.colors.good]
+										),
+										borderColor: colorPercentage(
+											i / 19.0,
+											[this.colors.bad, this.colors.neutralDark, this.colors.good]
+										),
+										height: reactMax === 0 ? 0 :
+											Math.round(this.layout.post.popularity.bar.height * (v / reactMax))
+									}}
+								/>)
+								: null
+							}
+							
+							<View style={this.style.post.popularityPlaceholder}>
+								{!this.post.reactions.hasSynced ?
+										<Spinner color={this.colors.neutralDark} />
+									:this.post.reactions.count < 2 ?
+										<Text style={this.style.post.popularityPlaceholderText}>
+											no reactions{"\n"}so far
+										</Text>
+
+									: null
+								}
+							</View>
+
+							{this.post.popularity ?
+								<View style={{
+									...this.style.post.popularityAxis,
+									transform: [{ translateX: axisOffset }]
+								}} />
+								: null
+							}
+
+						</View>
+
+						<View style={this.style.post.axisLabels}>
+
+							<FontAwesomeIcon
+								icon="map-marker-alt"
+								size={this.font.size.smallest}
+								color={this.colors.bad}
+								style={this.style.post.popularityDown}
+							/>
+
+							<Text style={this.style.post.popularityNumber}>
+								{` x${formatNumber(this.post.reactionCount || 0)}`}
+							</Text>
+
+							<FontAwesomeIcon
+								icon="map-marker-alt"
+								size={this.font.size.smallest}
+								color={this.colors.good}
+								style={this.style.post.popularityUp}
+							/>
+
+						</View>
+
+					</View>
+
+				</View>
+
+
+			// Costs
+			case "spend":
+				return <View style={this.style.post.rightBody}>
+					<View style={this.style.post.cost}>
+						<FontAwesomeIcon
+							icon="comment"
+							style={this.style.post.costIcon}
+						/>
+						<View style={this.style.post.currencies}>
+							<Currency
+								token="pod"
+								value={this.post.cost.pod || 0}
+							/>
+							<Currency
+								token="aud"
+								value={this.post.cost.aud || 0}
+							/>
+						</View>
+					</View>
+					<View style={this.style.post.cost}>
+						<FontAwesomeIcon
+							icon="bullhorn"
+							style={this.style.post.costIcon}
+						/>
+						<View style={this.style.post.currencies}>
+							<Currency
+								token="pod"
+								value={this.post.promotionSpend.pod}
+							/>
+							<Currency
+								token="aud"
+								value={this.post.promotionSpend.aud}
+							/>
+						</View>
+					</View>
+				</View>
+
+
+			// Info
+			default:
+				return <View style={this.style.post.rightBody}>
+					<View style={this.style.post.timestampHolder}>
+						<Text style={this.style.post.timestamp}>
+							{` ${this.post.datetime}`}
+						</Text>
+					</View>
+				</View>
+
+		}
+	}
+
+
+
 	render() {
 
-		// Calculate transform
-		let translate = Animated.add(
-			Animated.multiply(this.location, this.layout.post.span),
-			this.offset
-		)
-
-		// Picture corner animator
-		let leftCorner = translate.interpolate({
-			inputRange: [0, this.layout.post.span],
+		// Interpolate animators
+		let leftCorner = this.offset.interpolate({
+			inputRange: [0, this.layout.post.offsets.author],
 			outputRange: [0, this.layout.post.header.avatar.corner]
 		})
-		let rightCorner = translate.interpolate({
-			inputRange: [0, this.layout.post.span],
+		let rightCorner = this.offset.interpolate({
+			inputRange: [0, this.layout.post.offsets.author],
 			outputRange: [this.layout.post.header.avatar.corner, 0]
 		})
+		let counterOpacity = this.offset.interpolate({
+			inputRange: [-1 * this.layout.button.normal.height, 0],
+			outputRange: [1.0, 0.0]
+		})
+		let react = this.reaction.interpolate({
+			inputRange: [-1.0, 1.0],
+			outputRange: ["-90deg", "90deg"]
+		})
+		let promotionAngle = this.promoter.interpolate({
+			inputRange: [0.0, 1.0],
+			outputRange: ["0deg", "-35deg"]
+		})
+		let showOnPromote = {
+			...this.style.post.swapButton,
+			zIndex: this.promoting ? 2 : 1,
+			opacity: this.promoter
+		}
+		let hideOnPromote = {
+			...this.style.post.swapButton,
+			zIndex: this.promoting ? 1 : 2,
+			opacity: Animated.subtract(1.0, this.promoter)
+		}
 
 
 		// Unpack state
 		let { rewards, reaction } = this.getState()
 		let reactValue = magnitude(reaction, 0.5)
-		let react = this.reaction.interpolate({
-			inputRange: [-1.0, 1.0],
-			outputRange: ["-90deg", "90deg"]
-		})
+
+		let promotePOD = this.getState("promotion", "pod")
+		let promoteAUD = this.getState("promotion", "aud")
 
 
-		// Unpack reactions
-		let reactValues = Range(-10, 9)
-			.map(n => this.post.reactions
-				.filter(r => r.value >= n && r.value < (n + 1))
-				.size
-			)
-			.toJS()
-		console.log(reactValues)
-		let reactMax = Math.max(0.0, ...reactValues)
-
-
-		// Build components
 		return <View
 			key={this.props.keyName}
 			tappable
@@ -532,8 +868,11 @@ class Post extends Component {
 					style={{
 						...this.style.post.columns,
 						transform: [{
-							translateX: Animated.subtract(translate, this.layout.post.offset)
-						}]
+							translateX: Animated.subtract(
+								this.offset,
+								this.layout.post.offsets.default
+							)
+						}],
 					}}>
 
 
@@ -685,7 +1024,8 @@ class Post extends Component {
 					
 
 							<FadingView
-								show={this.stage === "loading" || this.stage === "reacting"}
+								show={this.stage === "loading" ||
+									this.stage === "reacting"}
 								animator={this.controlAnimator}
 								style={this.style.post.controlPanel}>
 								<Spinner color={this.colors.neutralDark} />
@@ -711,18 +1051,66 @@ class Post extends Component {
 								show={this.stage === "reacted"}
 								animator={this.controlAnimator}
 								style={this.style.post.controlPanel}>
+
 								<SquareButton 
 									icon="bullhorn"
-									onPress={() => console.log("promote")}
+									onPress={this.promoting ?
+										this.hidePromoter :
+										this.showPromoter
+									}
+									style={{
+										color: this.promoting ?
+											this.post.promoted ?
+												this.colors.white :
+												this.colors.major
+											:
+											this.colors.neutralDark,
+										backgroundColor: this.post.promoted ?
+											this.colors.major :
+											"transparent",
+										transform: [{ rotate: promotionAngle }]
+									}}
 								/>
-								<SquareButton
-									icon="quote-right"
-									onPress={() => console.log("quote")}
-								/>
-								<SquareButton
-									icon="comment-medical"
-									onPress={() => console.log("reply")}
-								/>
+
+								<View style={this.style.post.controlPanelInner}>
+									<SquareButton
+										icon="quote-right"
+										onPress={() => console.log("quote")}
+										style={hideOnPromote}
+									/>
+									<Animated.View style={showOnPromote}>
+										<Currency
+											token="pod"
+											value={this.activeUser.balance.pod - promotePOD}
+										/>
+										<Currency
+											token="aud"
+											value={this.activeUser.balance.aud - promoteAUD}
+										/>
+									</Animated.View>
+								</View>
+
+								<View style={this.style.post.controlPanelInner}>
+									<SquareButton
+										icon="comment-medical"
+										onPress={() => console.log("reply")}
+										style={hideOnPromote}
+									/>
+									<SquareButton
+										icon="trash-alt"
+										onPress={(promotePOD === 0 && promoteAUD === 0) ?
+											null :
+											this.resetPromotion
+										}
+										style={{
+											...showOnPromote,
+											opacity: (promotePOD === 0 && promoteAUD === 0) ?
+												0.0 :
+												showOnPromote.opacity
+										}}
+									/>
+								</View>
+
 							</FadingView>
 
 
@@ -766,14 +1154,16 @@ class Post extends Component {
 
 									<Animated.View style={{
 										...this.style.post.reactorCountdown,
-										opacity: this.countdownOpacity,
-										height: Animated.multiply(this.countdown, this.layout.post.reactor.countdownHeight),
+										opacity: (reactValue !== 0) ? 1.0 : 0.0,
+										height: Animated.multiply(
+											this.countdown,
+											this.layout.post.reactor.countdownHeight
+										),
 									}} />
 
 								</View>
 
 							</FadingView>
-
 
 						</View>
 
@@ -782,64 +1172,181 @@ class Post extends Component {
 
 
 
-					<View
-						pointerEvents="none"
-						style={this.style.post.right}>
+					<View style={this.style.post.right}>
 
-						<View style={this.style.post.rightCounters}>
+						<Animated.View style={{
+								...this.style.post.rightCounters,
+								opacity: counterOpacity,
+							}}>
 
-							<SquareButton
-								label={this.post.promotionCount}
-								onPress={() => console.log("view promos")}
-							/>
-							<SquareButton
-								label={this.post.quoteCount}
-								onPress={() => console.log("view quotes")}
-							/>
-							<SquareButton
-								label={this.post.replyCount}
-								onPress={() => console.log("view replies")}
-							/>
+							<View style={this.style.post.controlPanelInner}>
+								<SquareButton
+									style={[
+										!this.promoting ?
+											this.style.post.counter
+											: null,
+										hideOnPromote
+									]}
+									label={formatNumber(this.post.promotionCount || 0)}
+									labelStyle={this.style.post.counterText}
+									onPress={() => console.log("view promos")}
+								/>
+								<SquareButton
+									icon="plus-circle"
+									color={promotePOD === this.activeUser.balance.pod ?
+										this.colors.neutral :
+										this.colors.good
+									}
+									onPress={() => this.incrementPromotion("pod")}
+									style={showOnPromote}
+								/>
+							</View>
+
+							<View style={this.style.post.controlPanelInner}>
+								<SquareButton
+									style={[
+										!this.promoting ?
+											this.style.post.counter
+											: null,
+										hideOnPromote
+									]}
+									label={formatNumber(this.post.quoteCount || 0)}
+									labelStyle={this.style.post.counterText}
+									onPress={() => console.log("view quotes")}
+								/>
+								<Animated.View style={{
+										...showOnPromote,
+										...this.style.post.promoteCounterPOD,
+									}}>
+									<Text style={{
+											...this.style.post.promoteCounterText,
+											fontSize: promotePOD >= 100 ?
+												this.font.size.tiny :
+												this.font.size.smallest
+										}}>
+										{formatNumber(promotePOD)}
+									</Text>
+								</Animated.View>
+							</View>
+
+							<View style={this.style.post.controlPanelInner}>
+								<SquareButton
+									style={[
+										!this.promoting ?
+											this.style.post.counter
+											: null,
+										hideOnPromote
+									]}
+									label={formatNumber(this.post.replyCount || 0)}
+									labelStyle={this.style.post.counterText}
+									onPress={() => console.log("view replies")}
+								/>
+								<SquareButton
+									icon="minus-circle"
+									color={promotePOD === 0 ?
+										this.colors.neutral :
+										this.colors.bad
+									}
+									onPress={() => this.decrementPromotion("pod")}
+									style={showOnPromote}
+								/>
+							</View>
+
+						</Animated.View>
+
+						<View style={this.style.post.rightControls}>
+
+							<View style={this.style.post.controlPanelInner}>
+								<SquareButton
+									style={[
+										(this.contextPanel === "reactions") ?
+											this.style.post.contextButtonOn :
+											this.style.post.contextButtonOff,
+										hideOnPromote,
+									]}
+									color={this.contextPanel === "reactions" ?
+										this.colors.white :
+										this.colors.neutralDark
+									}
+									icon="map-marker-alt"
+									iconStyle={this.style.post.contextButtonReactIcon}
+									onPress={() => this.setContextPanel("reactions")}
+								/>
+								<SquareButton
+									icon="plus-circle"
+									color={promoteAUD === this.activeUser.balance.aud ?
+										this.colors.neutral :
+										this.colors.good
+									}
+									onPress={() => this.incrementPromotion("aud")}
+									style={showOnPromote}
+								/>
+							</View>
+							
+							<View style={this.style.post.controlPanelInner}>
+								<SquareButton
+									style={[
+										(this.contextPanel === "spend") ?
+											this.style.post.contextButtonOn :
+											this.style.post.contextButtonOff,
+										hideOnPromote,
+									]}
+									color={this.contextPanel === "spend" ?
+										this.colors.white :
+										this.colors.neutralDark
+									}
+									icon="coins"
+									onPress={() => this.setContextPanel("spend")}
+								/>
+								<Animated.View style={{
+										...showOnPromote,
+										...this.style.post.promoteCounterAUD,
+									}}>
+									<Text style={{
+											...this.style.post.promoteCounterText,
+											fontSize: promoteAUD >= 100 ?
+													this.font.size.tiny :
+													this.font.size.smallest
+										}}>
+										{formatNumber(promoteAUD)}
+									</Text>
+								</Animated.View>
+							</View>
+
+							<View style={this.style.post.controlPanelInner}>
+								<SquareButton
+									style={[
+										(this.contextPanel === "info") ?
+											this.style.post.contextButtonOn :
+											this.style.post.contextButtonOff,
+										hideOnPromote,
+									]}
+									color={this.contextPanel === "info" ?
+										this.colors.white :
+										this.colors.neutralDark
+									}
+									icon="info"
+									onPress={() => this.setContextPanel("info")}
+								/>
+								<SquareButton
+									icon="minus-circle"
+									color={promoteAUD === 0 ?
+										this.colors.neutral :
+										this.colors.bad
+									}
+									onPress={() => this.decrementPromotion("aud")}
+									style={showOnPromote}
+								/>
+							</View>
 
 						</View>
 
-						<View style={this.style.post.rightCore}>
-
-							<View style={this.style.post.rightHeader}>
-								<Text style={this.style.post.timestamp}>
-									{this.post.date}
-								</Text>
-							</View>
-
-							<View style={this.style.post.rightBody}>
-								
-								<View style={this.style.post.rightCost}>
-									<Currency currency="pod" value={this.post.cost.pod} />
-									<Currency currency="aud" value={this.post.cost.aud} />
-								</View>
-
-								<View style={this.style.post.popularityHolder}>
-
-									<View style={this.style.post.popularityChart}>
-
-										{reactValues.map((v, i) => <View
-											key={`${this.post.keyName}-react-hist-${i}`}
-											style={{
-												...this.style.post.popularityBar,
-												height: reactMax === 0 ? 0 :
-													Math.round(this.layout.post.popularity.height * (v / reactMax))
-											}}
-										/>)}
-
-										<View style={this.style.post.popularityAxis} />
-
-									</View>
-
-								</View>
-
-							</View>
-
-						</View>
+						<Animated.View style={{
+								...this.style.post.rightCore,
+								opacity: hideOnPromote.opacity,
+							}}>
+							{this.contextPanelComponent}
+						</Animated.View>
 
 						<View style={this.style.post.rightEdge}>
 
@@ -848,8 +1355,8 @@ class Post extends Component {
 								onPress={() => console.log("report")}
 							/>
 							<SquareButton 
-								icon="coins"
-								onPress={() => console.log("paid promotion")}
+								icon="paperclip"
+								onPress={() => console.log("copy link")}
 							/>
 							<SquareButton
 								icon="bookmark"

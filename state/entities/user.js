@@ -1,6 +1,6 @@
 import { observable, computed } from 'mobx';
 
-import { List } from 'immutable';
+import { List, Map } from 'immutable';
 
 import Entity from './entity';
 import Profile from './profile';
@@ -8,6 +8,7 @@ import Alias from './alias';
 import FollowerIndex from './indexes/followerIndex';
 import FollowingIndex from './indexes/followingIndex';
 import PostIndex from './indexes/postIndex';
+import BiasIndex from './indexes/biasIndex';
 
 import { placeholder } from './utils';
 
@@ -72,6 +73,12 @@ class User extends Entity {
 		return this.nation.get("posts", this.attributes.get("Posts"))
 	}
 
+	@computed
+	@placeholder(BiasIndex)
+	get biasIndex() {
+		return this.nation.get("bias", this.attributes.get("Bias"))
+	}
+
 
 
 
@@ -127,10 +134,6 @@ class User extends Entity {
 		return 0.5
 	}
 
-	get affinity() {
-		return 0.5
-	}
-
 	get sanctionCount() {
 		return 0
 	}
@@ -155,6 +158,41 @@ class User extends Entity {
 			.reduce((tot, txn) => tot + txn.value, 0)
 	}
 
+	@computed
+	get balance() {
+		return {
+			pod: this.pod,
+			aud: this.aud
+		}
+	}
+
+	@computed
+	get bias() {
+		return Map(this.biasIndex.meta)
+			.valueSeq()
+			.reduce((b, { value, bias }) => bias.map(
+				(coord, i) => (coord * value) + ((i >= b.length) ? 0 : b[i])
+			), [])
+	}
+
+	@computed
+	get affinity() {
+
+		// Handle different dimensionalities
+		let [ primary, secondary ] = this.bias.length > this.activeUser.bias.length ?
+			[ this.bias, this.activeUser.bias ] :
+			[ this.activeUser.bias, this.bias ]
+
+		// Reduce bias data into a relative measure
+		return 1.0 - Math.pow(
+			primary.reduce(
+				(tot, b, i) => Math.pow(b - (i >= secondary.length ? 0 : secondary[i]), 2.0),
+				0.0
+			),
+			0.5
+		)
+
+	}
 
 
 

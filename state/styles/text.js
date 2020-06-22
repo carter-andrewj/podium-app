@@ -47,7 +47,6 @@ export default Style => class TextStyle extends Style {
 
 		const body = {
 			fontFamily: this.font.body,
-			fontSize: this.font.size.small,
 			color: this.colors.black,
 			textAlign: "left",
 			padding: 0,
@@ -94,7 +93,6 @@ export default Style => class TextStyle extends Style {
 
 			alias: {
 				...body,
-				fontSize: this.font.size.smallest,
 				color: this.colors.neutralDark,
 			},
 

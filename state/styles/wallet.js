@@ -27,17 +27,20 @@ export default Style => class WalletStyle extends Style {
 
 			container: {
 				...this.row,
-				padding: this.layout.gauge.margin,
+				justifyContent: "flex-end",
+				paddingLeft: this.layout.gauge.margin,
+				paddingRight: this.layout.gauge.margin,
 			},
 
 			text: {
 				...this.text.title,
 				fontSize: this.font.size.tiny,
+				height: this.font.size.smallest,
 				marginLeft: "auto",
 			},
 
 			icon: {
-				marginRight: "auto",
+				minHeight: this.font.size.smallest,
 			}
 
 		})

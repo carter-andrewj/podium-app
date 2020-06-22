@@ -3,7 +3,7 @@
     "name": "Podium",
     "slug": "Podium",
     "privacy": "public",
-    "sdkVersion": "33.0.0",
+    "sdkVersion": "37.0.0",
     "platforms": [
       "ios",
       "android",

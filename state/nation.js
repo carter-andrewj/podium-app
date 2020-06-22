@@ -6,6 +6,7 @@ import { v4 as uuid } from 'uuid';
 
 import { getEntity } from './entities/entities';
 
+import OfflineSocket from './offline';
 
 
 
@@ -34,7 +35,7 @@ export default class Nation {
 		this.error = observable.box(undefined, { name: "error" })
 
 		this.entities = observable.map({}, { name: "entities" })
-		this.alerts = observable.map({}, { name: "alerts" })
+		this.alerts = observable.map({}, { name: "alerts", deep: false })
 
 		// Methods
 		this.connect = this.connect.bind(this)
@@ -124,7 +125,12 @@ export default class Nation {
 		return new Promise((resolve, reject) => {
 
 			// Create websocket
-			this.client = io.connect(this.url, { transports: ['websocket'] })
+			if (this.url === "offline") {
+				this.client = new OfflineSocket()
+				this.client.connect()
+			} else {
+				this.client = io.connect(this.url, { transports: ['websocket'] })
+			}
 
 			// Handle errors
 			this.client.on("error", this.fail)
@@ -241,7 +247,6 @@ export default class Nation {
 
 	@action.bound
 	addAlert(alert) {
-		console.log("adding alert", alert)
 		this.alerts.set(alert.key, alert)
 	}
 

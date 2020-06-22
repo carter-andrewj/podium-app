@@ -67,6 +67,10 @@ class Entity {
 		return this.nation.client
 	}
 
+	get activeUser() {
+		return this.session.user
+	}
+
 
 
 

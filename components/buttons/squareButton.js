@@ -35,12 +35,13 @@ export default class SquareButton extends Component {
 
 					<Spinner
 						size={this.layout.button.normal.iconSize}
-						color={this.props.color}
+						color={this.props.color || this.colors.neutralDark}
 					/>
 
 					:
 
-					<View style={[this.style.container, this.props.contentStyle]}>
+					<Animated.View style={[this.style.container, this.props.contentStyle]}>
+
 						{this.props.label ?
 							<View style={this.style.button.overlay}>
 								<Text style={[
@@ -68,13 +69,23 @@ export default class SquareButton extends Component {
 										(this.props.style ? this.props.style.color : undefined) ||
 										this.colors.neutralDark
 									}
-									style={this.style.button.icon}
+									style={{
+										...this.style.button.icon,
+										...this.props.iconStyle
+									}}
 								/>
 							</View>
 							: null
 						}
+
+						{this.props.overlay ?
+							<View style={this.style.button.overlay}>
+								{this.props.overlay}
+							</View>
+							: null
+						}
 						
-					</View>
+					</Animated.View>
 				}
 			</TouchableOpacity>
 		</Animated.View>

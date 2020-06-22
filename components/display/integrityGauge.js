@@ -12,7 +12,7 @@ export default class IntegrityGauge extends Component {
 
 	render() {
 		return <Gauge
-			value={this.props.user ? this.props.user.affinity : undefined}
+			value={this.props.user ? this.props.user.integrity : undefined}
 			iconSize={13}
 			icon="balance-scale"
 			style={this.props.style}

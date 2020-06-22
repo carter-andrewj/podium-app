@@ -6,9 +6,10 @@ import Entity from './entity';
 import User from './user';
 import ReplyIndex from './indexes/replyIndex';
 import ReactionIndex from './indexes/reactionIndex';
+import PromotionIndex from './indexes/promotionIndex';
 
 import { placeholder } from './utils';
-import { formatAge, formatDate } from '../../utils/utils';
+import { formatAge, formatDate, formatTime } from '../../utils/utils';
 
 
 
@@ -60,13 +61,30 @@ class Post extends Entity {
 	@computed
 	@placeholder(ReactionIndex)
 	get reactions() {
-		return this.nation.get("reactions", this.attributes.get("Reactions"))
+		return this.nation.get("Reactions", this.attributes.get("Reactions"))
 	}
 
 	@computed
 	@placeholder(null)
 	get reacted() {
 		return this.reactions.has(this.nation.activeUser.address)
+	}
+
+	@computed
+	@placeholder()
+	get reactionCount() {
+		return 135232
+		return this.reactions.count - 1
+	}
+
+	@computed
+	@placeholder()
+	get popularity() {
+		return 0.34
+		let total = Map(this.reactions.meta.toJS())
+			.filter(r => r.value < 1)
+			.reduce((tot, next) => tot + next.value, 0.0)
+		return total / this.reactionCount
 	}
 
 
@@ -90,6 +108,18 @@ class Post extends Entity {
 	@placeholder("")
 	get date() {
 		return formatDate(this.timestamp)
+	}
+
+	@computed
+	@placeholder("")
+	get time() {
+		return formatTime(this.timestamp)
+	}
+
+	@computed
+	@placeholder("")
+	get datetime() {
+		return `${this.date}, ${this.time}`
 	}
 
 
@@ -240,15 +270,40 @@ class Post extends Entity {
 		return this.replies.count
 	}
 
+	@computed
+	@placeholder()
+	get quoteCount() {
+		return 0
+	}
+
 
 
 
 // PROMOTIONS
 
 	@computed
+	@placeholder(PromotionIndex)
+	get promotions() {
+		return this.nation.get("Promotions", this.attributes.get("Promotions"))
+	}
+
+	@computed
 	@placeholder()
 	get promotionCount() {
-		return 0
+		return this.promotions.count
+	}
+
+	@computed
+	@placeholder()
+	get promotionSpend() {
+		return {
+			pod: this.promotions
+				.filter(p => p.currency === "POD")
+				.reduce((tot, nxt) => tot + nxt.value, 0.0),
+			aud: this.promotions
+				.filter(p => p.currency === "AUD")
+				.reduce((tot, nxt) => tot + nxt.value, 0.0),
+		}
 	}
 
 

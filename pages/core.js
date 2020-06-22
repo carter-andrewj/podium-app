@@ -11,7 +11,7 @@ import Screen from '../components/screen';
 import TaskBar from '../components/tasks/taskBar';
 
 import Menu from './drawers/menu/menu';
-import Alerts from './drawers/alerts/alerts';
+import AlertFeed from './drawers/alerts/alertFeed';
 import Nation from './drawers/nation/nation';
 import Search from './drawers/search/search';
 
@@ -240,7 +240,7 @@ export default class Core extends Page {
 					signOut={this.props.signOut}
 				/>
 
-				<Alerts
+				<AlertFeed
 					animator={this.animator}
 					open={this.open === "alerts"}
 					controller={this.control("alerts")}

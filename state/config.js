@@ -2,6 +2,7 @@
 
 const config = {
 
+	api: "offline",
 	//api: "https://api.podium-network.com",
 
 	// PUT THIS ON THE SERVER
@@ -180,6 +181,8 @@ const config = {
 			darkGrey: "#888888",
 
 			white: "#FEFEFE",
+			offWhite: "#FAFAFA",
+			offBlack: "#0A0A0A",
 			black: "#010101",
 
 			purple: "#AA0088",
@@ -275,12 +278,18 @@ const config = {
 			buttonSpacing: 0.14,	// Spacing between buttons (% of screen width)
 		},
 
+		// Alerts
+		alerts: {
+			height: 0.16,			// Height of an alert (% of screen width)
+		},
+
 		// Search
 		search: {
 			inputHeight: 0.1,		// Size of search input box (% of screen width)
 			iconSize: 0.04,			// Size of icons in quicksearch input (% of screen width)
 		},
 
+		// News feed
 		feed: {
 			loadingIcon: 0.1,		// Size of the loading icon (% of screen width)
 			backgroundIcon: 0.12,	// Size of the background icon on notices (% of screen width)
@@ -293,7 +302,8 @@ const config = {
 			headerHeight: 0.06,		// Height of post header - name, @identity, etc.. (% of screen width)
 			mediaAspectRatio: 0.5625,	// Default aspect ratio (vs post width) of a single item of media
 			thumbnailCount: 2.8,		// Number of thumbnails to fit across a post before scrolling
-			popularitySize: 0.6,		// Width of popularity chart (% of post content width)
+			popularitySize: 0.7,		// Width of popularity chart (% of post content width)
+			popularityAxis: 1,			// Width of the popularity chart axis (pixels)
 		},
 
 		// Link Previews

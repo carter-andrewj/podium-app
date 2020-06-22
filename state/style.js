@@ -101,6 +101,8 @@ class BaseStyle {
 			neutralDarkest: colors.darkGrey,
 
 			white: colors.white,
+			offWhite: colors.offWhite,
+			offBlack: colors.offBlack,
 			black: colors.black,
 
 			pod: colors.green,
