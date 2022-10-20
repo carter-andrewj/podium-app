@@ -14,7 +14,7 @@
     "@fortawesome/free-brands-svg-icons": "^5.11.2",
     "@fortawesome/free-solid-svg-icons": "^5.11.2",
     "@react-native-community/cli": "^2.10.0",
-    "expo": "^33.0.7",
+    "expo": "^46.0.16",
     "expo-cli": "^3.21.9",
     "expo-constants": "~5.0.1",
     "expo-font": "~5.0.1",
